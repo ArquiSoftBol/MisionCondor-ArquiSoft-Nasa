@@ -30,7 +30,7 @@ interface Escenario {
   items: ItemDef[];
   receta: { tipo: 'sistemas' | 'orden'; ranuras?: string[]; masaMax?: number; orden?: string[] };
 }
-interface Estado { items: { id: string; estado: string; x: number; y: number }[]; carga: string[]; bandeja: string[]; montado: { id: string; sistema: string | null }[]; masa: number; errores: number; pedido: string | null; inicio: number; fin: { segundos: number; errores: number; estrellas: number } | null }
+interface Estado { items: { id: string; estado: string; x: number; y: number }[]; carga: string[]; bandeja: string[]; montado: { id: string; sistema: string | null }[]; masa: number; errores: number; pedido: string | null; inicio: number; ahora?: number; fin: { segundos: number; errores: number; estrellas: number } | null }
 
 const VEL = 240;
 const SISTEMA_NOMBRE: Record<string, string> = { energia: 'Energía', control: 'Control', comunicacion: 'Comunicación', propulsion: 'Propulsión' };
@@ -59,6 +59,7 @@ export class Coop extends Phaser.Scene {
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
   private palanca!: Palanca;
   private ultimoEnvio = 0;
+  private desfase = 0;   // hora del servidor − hora de este aparato (los celulares suelen tener el reloj corrido)
   private hud!: Phaser.GameObjects.Text;
   private reloj!: Phaser.GameObjects.Text;
   private objetivo!: Cintillo;
@@ -69,13 +70,14 @@ export class Coop extends Phaser.Scene {
   private calib?: { aguja: number; dir: number; zona: [number, number]; g: Phaser.GameObjects.Graphics };
   private quitar: (() => void)[] = [];
   private terminado = false;
+  private dialogo?: Phaser.GameObjects.Container;   // confirmación de salida / compañero que se fue
 
   constructor() { super('Coop'); }
 
   init(d: { esc: Escenario; rol: Rol; yo: number; sala: VistaSala }): void {
     this.esc = d.esc; this.rol = d.rol; this.yo = d.yo; this.sala = d.sala;
     this.estado = undefined; this.otroA = undefined; this.items = new Map(); this.etiquetas = new Map(); this.solidos = [];
-    this.mesaPanel = undefined; this.seleccion = null; this.calib = undefined; this.terminado = false;
+    this.mesaPanel = undefined; this.seleccion = null; this.calib = undefined; this.terminado = false; this.dialogo = undefined;
     this.sombras = new Map(); this.cargaIconos = undefined; this.cargaClave = ''; this.tecla = undefined; this.noche = undefined;
   }
 
@@ -159,7 +161,7 @@ export class Coop extends Phaser.Scene {
     kb.on('keydown', (ev: KeyboardEvent) => {
       if (ev.repeat) return;
       if (ev.key === 'e' || ev.key === 'E' || ev.key === ' ') this.usar();
-      if (ev.key === 'Escape') this.cerrarMesa();
+      if (ev.key === 'Escape') { if (this.dialogo) this.cerrarDialogo(); else if (this.mesaPanel) this.cerrarMesa(); else if (!this.terminado) this.confirmarSalida(); }
     });
 
     this.quitar.push(
@@ -168,7 +170,12 @@ export class Coop extends Phaser.Scene {
       Red.on('evento', m => this.evento(m)),
       Red.on('aviso', m => aviso(this, String(m.msg), CSS.amarillo, 110)),
       Red.on('fin', m => this.fin(m)),
-      Red.on('sala', m => { this.sala = m.sala as VistaSala; if (this.sala.fase === 'espera' && this.terminado) this.scene.start('MultiLobby', { sala: this.sala }); }),
+      Red.on('sala', m => {
+        this.sala = m.sala as VistaSala;
+        if (this.sala.fase !== 'espera') return;
+        if (this.terminado && !this.dialogo) this.scene.start('MultiLobby', { sala: this.sala });   // revancha
+        else if (!this.terminado) this.companeroSeFue();
+      }),
       Red.on('conexion', m => { if (!m.ok) aviso(this, 'Se cortó la conexión: reconectando…', CSS.rojo, 110); }),
     );
     this.events.once('shutdown', () => { this.quitar.forEach(f => f()); this.quitar = []; });
@@ -196,6 +203,8 @@ export class Coop extends Phaser.Scene {
     this.mini = this.add.graphics().setScrollFactor(0).setDepth(90000);
     const usar = boton(this, W - 86, H - 64, 'USAR', () => this.usar(), { ancho: 130, alto: 60, variante: 'primario', retardo: 0 });
     usar.setScrollFactor(0, 0, true).setDepth(90001);
+    const salir = boton(this, W - 72, 30, 'Salir', () => this.confirmarSalida(), { ancho: 118, alto: 38, tam: 13, variante: 'peligro', icono: '✕', retardo: 0 });
+    salir.setScrollFactor(0, 0, true).setDepth(90001);
     this.add.text(W - 16, H - 12, t(esTactil() ? 'Palanca: moverse · USAR: usar' : 'WASD / flechas: moverse · E: usar'), { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: '#7f93b5' }).setOrigin(1, 1).setScrollFactor(0).setDepth(90001);
   }
 
@@ -218,6 +227,7 @@ export class Coop extends Phaser.Scene {
 
   private aplicar(e: Estado): void {
     this.estado = e;
+    if (typeof e.ahora === 'number') this.desfase = e.ahora - Date.now();
     e.items.forEach(i => {
       const v = this.items.get(i.id);
       if (!v) return;
@@ -244,6 +254,7 @@ export class Coop extends Phaser.Scene {
     if (!this.estado || this.terminado) return;
     if (this.mesaPanel) { if (this.calib) this.montar(); return; }
     const { x, y } = this.yoA;
+    Red.enviar({ t: 'pos', x: Math.round(x), y: Math.round(y), dir: this.yoA.dir, mov: false }); this.ultimoEnvio = this.time.now;
     if (this.rol === 'recolector') {
       const e = this.esc.entrega;
       if (this.estado.carga.length && Math.hypot(x - e.x, y - e.y) < e.r + 30) { Red.enviar({ t: 'entregar' }); return; }
@@ -320,6 +331,44 @@ export class Coop extends Phaser.Scene {
     c.add(boton(this, W / 2 + 330, 494, 'Cerrar', () => this.cerrarMesa(), { ancho: 140, alto: 40, tam: 14, variante: 'neutro', retardo: 0 }));
   }
 
+  // ───────── salir a mitad de partida ─────────
+  private ventana(titulo: string, color: number, mensaje: string, botones: [string, 'peligro' | 'neutro' | 'exito', () => void][]): void {
+    this.cerrarDialogo();
+    this.cerrarMesa();
+    const c = this.add.container(0, 0).setScrollFactor(0).setDepth(99000);
+    c.add(this.add.rectangle(W / 2, H / 2, W, H, 0x02040a, 0.72).setInteractive());   // bloquea el juego de atrás
+    c.add(panel(this, W / 2, H / 2, 560, 236, { titulo, color }));
+    c.add(this.add.text(W / 2, H / 2 - 40, t(mensaje), { fontFamily: FUENTE, fontSize: '15px', fontStyle: '700', color: '#e8f6ff', align: 'center', lineSpacing: 4, wordWrap: { width: 470 } }).setOrigin(0.5));
+    botones.forEach(([txt, variante, fn], i) => {
+      const x = botones.length === 1 ? W / 2 : W / 2 + (i === 0 ? -125 : 125);
+      c.add(boton(this, x, H / 2 + 56, txt, fn, { ancho: 220, alto: 46, variante, icono: variante === 'peligro' ? '✕' : variante === 'exito' ? '↺' : '‹', retardo: 0 }));
+    });
+    this.dialogo = c;
+  }
+
+  private cerrarDialogo(): void { this.dialogo?.destroy(); this.dialogo = undefined; }
+
+  /** Botón Salir / Esc: pregunta antes, porque el compañero queda solo. */
+  private confirmarSalida(): void {
+    if (this.terminado) return;
+    if (this.dialogo) { this.cerrarDialogo(); return; }
+    Sonido.click();
+    this.ventana('¿SALIR DE LA MISIÓN?', 0xff4a3d, 'Si sales ahora, la partida termina para los dos y tu compañero vuelve a la sala de espera.', [
+      ['Seguir jugando', 'neutro', () => this.cerrarDialogo()],
+      ['Salir', 'peligro', () => { this.terminado = true; Red.salirDeSala(); this.scene.start('MultiLobby'); }],
+    ]);
+  }
+
+  /** El otro jugador salió (o se le acabó el tiempo para reconectarse): la sala volvió a la espera. */
+  private companeroSeFue(): void {
+    this.terminado = true;
+    Sonido.mal();
+    this.ventana('PARTIDA TERMINADA', 0xffb33f, 'Tu compañero salió de la misión. Puedes esperar en la sala a que vuelva o entre otra persona con el mismo código.', [
+      ['Salir al menú', 'neutro', () => { Red.salirDeSala(); this.scene.start('MultiLobby'); }],
+      ['Ir a la sala', 'exito', () => { const s = this.sala; this.cerrarDialogo(); this.scene.start('MultiLobby', { sala: s }); }],
+    ]);
+  }
+
   private cerrarMesa(): void { this.mesaPanel?.destroy(); this.mesaPanel = undefined; this.calib = undefined; }
 
   private montar(): void {
@@ -346,7 +395,7 @@ export class Coop extends Phaser.Scene {
     this.pintarCalibracion(dt);
     // movimiento propio
     let dx = 0, dy = 0;
-    if (!this.mesaPanel && !this.terminado) {
+    if (!this.mesaPanel && !this.terminado && !this.dialogo) {
       const k = this.teclas, c = this.cursor;
       if (c.left.isDown || k.A.isDown) dx -= 1;
       if (c.right.isDown || k.D.isDown) dx += 1;
@@ -386,7 +435,7 @@ export class Coop extends Phaser.Scene {
     this.guia();
     this.minimapa();
     if (this.estado) {
-      const s = Math.max(0, Math.floor(((this.estado.fin ? this.estado.inicio + this.estado.fin.segundos * 1000 : Date.now()) - this.estado.inicio) / 1000));
+      const s = Math.max(0, Math.floor(((this.estado.fin ? this.estado.inicio + this.estado.fin.segundos * 1000 : Date.now() + this.desfase) - this.estado.inicio) / 1000));
       this.reloj.setText(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} / ${Math.floor(this.esc.tiempo / 60)}:${String(this.esc.tiempo % 60).padStart(2, '0')}`).setColor(s > this.esc.tiempo ? '#ff8a7a' : '#ffffff');
     }
   }

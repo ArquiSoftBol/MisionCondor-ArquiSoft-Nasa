@@ -113,7 +113,7 @@ function avisarSala(s) { difundir(s, { t: 'sala', sala: vistaSala(s) }); }
 
 function estadoJuego(s) {
   const e = s.juego;
-  return { t: 'estado', items: e.items, carga: e.carga, bandeja: e.bandeja, montado: e.montado, masa: e.masa, errores: e.errores, pedido: e.pedido, inicio: e.inicio, fin: e.fin ?? null };
+  return { t: 'estado', items: e.items, carga: e.carga, bandeja: e.bandeja, montado: e.montado, masa: e.masa, errores: e.errores, pedido: e.pedido, inicio: e.inicio, fin: e.fin ?? null, ahora: Date.now() };
 }
 
 function empezar(s) {
@@ -230,7 +230,8 @@ function mensaje(j, m) {
     case 'tomar': {
       if (!s || s.fase !== 'juego' || j.rol !== 'recolector') return;
       const esc = ESCENARIOS[s.escenario], e = s.juego, it = e.items.find(i => i.id === m.item), def = esc.items.find(i => i.id === m.item);
-      if (!it || it.estado !== 'libre' || !cerca(j, it.x, it.y, 110)) return;
+      if (!it || it.estado !== 'libre') return;
+      if (!cerca(j, it.x, it.y, 130)) return j.con.enviar({ t: 'aviso', msg: 'Acércate un poco más a la pieza.' });
       const ocupado = e.carga.reduce((n, id) => n + unidades(esc.items.find(i => i.id === id)), 0);
       if (ocupado + unidades(def) > 2) return j.con.enviar({ t: 'aviso', msg: 'El carro está lleno: lleva lo que tienes al hangar.' });
       it.estado = 'carga'; e.carga.push(it.id);
@@ -240,7 +241,8 @@ function mensaje(j, m) {
     case 'entregar': {
       if (!s || s.fase !== 'juego' || j.rol !== 'recolector') return;
       const esc = ESCENARIOS[s.escenario], e = s.juego;
-      if (!e.carga.length || !cerca(j, esc.entrega.x, esc.entrega.y, esc.entrega.r + 40)) return;
+      if (!e.carga.length) return;
+      if (!cerca(j, esc.entrega.x, esc.entrega.y, esc.entrega.r + 50)) return j.con.enviar({ t: 'aviso', msg: 'Acércate a la plataforma naranja del hangar.' });
       e.carga.forEach(id => { e.items.find(i => i.id === id).estado = 'bandeja'; e.bandeja.push(id); });
       e.carga = [];
       difundir(s, { t: 'evento', tipo: 'entrega' });
@@ -293,7 +295,12 @@ function salir(j) {
   s.jugadores = s.jugadores.filter(x => x !== j);
   j.sala = null;
   if (!s.jugadores.length) { salas.delete(s.codigo); return; }
-  if (s.fase !== 'espera') difundir(s, { t: 'aviso', msg: 'Tu compañero salió de la partida.' });
+  if (s.fase !== 'espera') {
+    const abandonada = s.fase === 'juego';
+    s.fase = 'espera'; s.juego = null;
+    s.jugadores.forEach(x => { x.listo = false; });
+    if (abandonada) { q.estadoSala.run('abandonada', s.codigo); difundir(s, { t: 'aviso', msg: 'Tu compañero salió de la partida.' }); }
+  }
   avisarSala(s);
 }
 
