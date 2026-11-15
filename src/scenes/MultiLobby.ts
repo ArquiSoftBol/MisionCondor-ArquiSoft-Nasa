@@ -10,6 +10,7 @@ import { segmentado } from '../ui/controles';
 import { fondoSalar, HOJAS_ESCENARIO } from '../ui/escenarios';
 import { Actor, cargar } from '../core/sprites';
 import { grano } from '../ui/cine';
+import { guiaCoop } from '../ui/guiaCoop';
 
 const ESTILO = `width:420px;font:700 18px "Open Sans",system-ui,sans-serif;color:#fff;background:rgba(63,243,255,.08);
   border:0;border-bottom:3px solid #3ff3ff;border-radius:10px 10px 0 0;outline:none;padding:10px 12px;caret-color:#ffe14d;`;
@@ -192,6 +193,8 @@ export class MultiLobby extends Phaser.Scene {
     c.add(this.add.text(W / 2 - 220, 176, s.codigo, { fontFamily: FUENTE_PIXEL, fontSize: '30px', color: '#ffe14d', stroke: '#04121a', strokeThickness: 5 }).setOrigin(0.5));
     c.add(boton(this, W / 2 - 220, 222, 'Copiar código', () => { navigator.clipboard?.writeText(s.codigo).then(() => aviso(this, 'Código copiado', CSS.verde, 110)).catch(() => aviso(this, `Código: ${s.codigo}`, CSS.cian, 110)); }, { ancho: 190, alto: 36, tam: 13, variante: 'fantasma', icono: '⧉', retardo: 0 }));
     c.add(this.add.text(W / 2 + 120, 150, t(esc.nombre), { fontFamily: FUENTE, fontSize: '16px', fontStyle: '800', color: '#ffffff', align: 'center', wordWrap: { width: 400 } }).setOrigin(0.5));
+    const miRol = s.jugadores.find(p => p.id === this.yo)?.rol ?? 'ingeniero';
+    c.add(boton(this, W / 2 + 120, 246, 'Cómo se juega', () => { Sonido.click(); guiaCoop(this, s.escenario, miRol, { nombreEscenario: esc.nombre, boton: 'Entendido', alCerrar: () => undefined }); }, { ancho: 210, alto: 34, tam: 13, variante: 'fantasma', icono: '?', retardo: 0 }));
     c.add(this.add.text(W / 2 + 120, 196, t(esc.descripcion), { fontFamily: FUENTE, fontSize: '11px', fontStyle: '700', color: '#c8d6ec', align: 'center', wordWrap: { width: 420 } }).setOrigin(0.5));
     // los dos lugares
     (['ingeniero', 'recolector'] as const).forEach((rol, i) => {

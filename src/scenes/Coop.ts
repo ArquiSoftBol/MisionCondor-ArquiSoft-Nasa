@@ -15,7 +15,8 @@ import { colorear } from '../ui/cine';
 import { ROLES, type VistaSala } from './MultiLobby';
 import { vineta } from '../ui/ambiente';
 import { grano } from '../ui/cine';
-import { costraDeSal, senderos, cartel, sombra, polvoPasos, faro, Oscuridad, presentarRol, NOMBRE_EDIFICIO } from '../ui/coopEstilo';
+import { costraDeSal, senderos, cartel, sombra, polvoPasos, faro, Oscuridad, NOMBRE_EDIFICIO } from '../ui/coopEstilo';
+import { guiaCoop } from '../ui/guiaCoop';
 import { Palanca, esTactil } from '../ui/palanca';
 
 type Rol = 'ingeniero' | 'recolector';
@@ -147,11 +148,8 @@ export class Coop extends Phaser.Scene {
     if (noche) this.noche = new Oscuridad(this);
     vineta(this, noche ? 0.55 : 0.35, 41000);
     grano(this, 41001, 0.05);
-    const tareas = this.rol === 'recolector'
-      ? ['Sigue los faros: cada uno marca una pieza.', 'Tu carro lleva 2 espacios; las piezas pesadas ocupan los dos.', 'Déjalas en la plataforma naranja del hangar (E).', 'Si una pieza brilla dorada, el Ingeniero la necesita ya.']
-      : ['Tu mesa está en el hangar: ábrela con E.', 'Elige una pieza, calibra con la aguja y móntala.', 'Devuelve lo que no sirve y pide lo que falta.', 'Cuidado: cada error cuesta estrellas.'];
-    const lema = this.rol === 'recolector' ? 'Tú conoces la Ciudadela. Sigue los faros dorados y trae lo que pidan.' : 'Tú conoces el plano. Pide lo que falta, revisa la masa, calibra.';
-    presentarRol(this, ROLES[this.rol].nombre, ROLES[this.rol].color, tareas, () => undefined, lema);
+    // guía específica de este escenario y este rol (se vuelve a abrir con «?» o la tecla H)
+    this.time.delayedCall(450, () => this.verGuia());
 
     this.interfaz();
     const kb = this.input.keyboard!;
@@ -161,6 +159,7 @@ export class Coop extends Phaser.Scene {
     kb.on('keydown', (ev: KeyboardEvent) => {
       if (ev.repeat) return;
       if (ev.key === 'e' || ev.key === 'E' || ev.key === ' ') this.usar();
+      if ((ev.key === 'h' || ev.key === 'H') && !this.terminado) { this.verGuia(); return; }
       if (ev.key === 'Escape') { if (this.dialogo) this.cerrarDialogo(); else if (this.mesaPanel) this.cerrarMesa(); else if (!this.terminado) this.confirmarSalida(); }
     });
 
@@ -205,6 +204,8 @@ export class Coop extends Phaser.Scene {
     usar.setScrollFactor(0, 0, true).setDepth(90001);
     const salir = boton(this, W - 72, 30, 'Salir', () => this.confirmarSalida(), { ancho: 118, alto: 38, tam: 13, variante: 'peligro', icono: '✕', retardo: 0 });
     salir.setScrollFactor(0, 0, true).setDepth(90001);
+    const ayuda = boton(this, W - 162, 30, '?', () => this.verGuia(), { ancho: 46, alto: 38, tam: 18, variante: 'fantasma', retardo: 0 });
+    ayuda.setScrollFactor(0, 0, true).setDepth(90001);
     this.add.text(W - 16, H - 12, t(esTactil() ? 'Palanca: moverse · USAR: usar' : 'WASD / flechas: moverse · E: usar'), { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: '#7f93b5' }).setOrigin(1, 1).setScrollFactor(0).setDepth(90001);
   }
 
@@ -347,6 +348,16 @@ export class Coop extends Phaser.Scene {
   }
 
   private cerrarDialogo(): void { this.dialogo?.destroy(); this.dialogo = undefined; }
+
+  /** «Cómo se juega» de mi rol en este escenario. Mientras está abierta no me muevo (el reloj del equipo sigue). */
+  private verGuia(): void {
+    if (this.terminado) return;
+    if (this.dialogo) { this.cerrarDialogo(); return; }
+    this.cerrarMesa();
+    Sonido.click();
+    const g = guiaCoop(this, this.sala.escenario, this.rol, { nombreEscenario: this.esc.nombre, alCerrar: () => { if (this.dialogo === g) this.dialogo = undefined; } });
+    this.dialogo = g;
+  }
 
   /** Botón Salir / Esc: pregunta antes, porque el compañero queda solo. */
   private confirmarSalida(): void {

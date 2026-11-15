@@ -100,3 +100,64 @@ export const GUIAS: Record<string, Guia> = {
 
 /** Guía de una escena (si tiene). */
 export const guiaDe = (escena: string): Guia | undefined => GUIAS[escena];
+
+// ───────── Multijugador «Turno de noche»: una guía por escenario y por rol ─────────
+const CTRL_ING = 'WASD / flechas: moverse  ·  E: abrir la mesa  ·  Ratón: elegir, pedir y MONTAR';
+const TAC_ING = 'Palanca: moverse  ·  USAR: abrir la mesa  ·  Toca las piezas para elegir y pedir';
+const CTRL_REC = 'WASD / flechas: moverse  ·  E: tomar y entregar piezas';
+const TAC_REC = 'Palanca o dedo: moverse  ·  USAR: tomar y entregar piezas';
+
+export const GUIAS_COOP: Record<string, Record<'ingeniero' | 'recolector', Guia>> = {
+  salar: {
+    ingeniero: {
+      tema: 'Sistemas de una nave espacial',
+      objetivo: 'Arma el módulo para Europa: energía, control, comunicación y propulsión, sin pasar de 900 kg.',
+      pasos: [
+        ['ico_objetivo', 'Ve a tu mesa del hangar (círculo cian) y ábrela con USAR.'],
+        ['ico_equipo', 'En «Pedir al Recolector» toca la pieza que falta: a tu compañero le brilla dorada.'],
+        ['ico_engranaje', 'Cuando llegue a la mesa, elígela y pulsa MONTAR con la aguja en la zona verde.'],
+        ['ico_sol', 'En Europa el Sol casi no llega: el panel solar no sirve, usa el RTG. Lo que no sirva, Devuélvelo.'],
+      ],
+      controles: CTRL_ING, tactil: TAC_ING,
+      idea: 'Lejos del Sol, las naves usan generadores nucleares (RTG) en vez de paneles solares.',
+    },
+    recolector: {
+      tema: 'Sistemas de una nave espacial',
+      objetivo: 'Encuentra las piezas en la Ciudadela y llévalas a la plataforma naranja del hangar.',
+      pasos: [
+        ['ico_ruta', 'Sigue la flecha y los faros: cada faro marca un edificio con una pieza.'],
+        ['ico_pista', 'Si una pieza brilla dorada, el Ingeniero la pidió: tráela primero.'],
+        ['ico_masa', 'Tu carro tiene 2 espacios: las piezas de 150 kg o más ocupan los dos.'],
+        ['ico_soltar', 'Párate en la plataforma naranja del hangar y pulsa USAR para entregar.'],
+      ],
+      controles: CTRL_REC, tactil: TAC_REC,
+      idea: 'Cada kilo cuenta: una nave más pesada necesita mucho más combustible.',
+    },
+  },
+  cohete: {
+    ingeniero: {
+      tema: 'Cohetes por etapas',
+      objetivo: 'Monta el cohete en orden: etapa central, los dos propulsores y, arriba, la etapa superior.',
+      pasos: [
+        ['ico_objetivo', 'Tu mesa está junto a la torre de lanzamiento: ábrela con USAR.'],
+        ['ico_equipo', 'Pide la pieza que sigue en el orden: a tu compañero le brilla dorada.'],
+        ['ico_engranaje', 'Elige la pieza y pulsa MONTAR con la aguja en la zona verde.'],
+        ['ico_pista', 'Si no es la que sigue, una pista te dice cuál va. El tanque de repuesto no va: Devuélvelo.'],
+      ],
+      controles: CTRL_ING, tactil: TAC_ING,
+      idea: 'Un cohete se arma de abajo hacia arriba: primero la etapa que más empuja.',
+    },
+    recolector: {
+      tema: 'Cohetes por etapas',
+      objetivo: 'Trae las etapas del cohete desde toda la Ciudadela hasta la plataforma junto a la torre.',
+      pasos: [
+        ['ico_ruta', 'Las etapas están repartidas por la Ciudadela: sigue la flecha y los faros.'],
+        ['ico_pista', 'Trae primero la pieza dorada: es la que el Ingeniero puede montar ya.'],
+        ['ico_masa', 'Cada etapa es muy pesada: el carro lleva solo una por viaje.'],
+        ['ico_soltar', 'Déjala en la plataforma naranja junto a la torre con USAR.'],
+      ],
+      controles: CTRL_REC, tactil: TAC_REC,
+      idea: 'Los propulsores laterales dan el empujón inicial y después se sueltan para aligerar el cohete.',
+    },
+  },
+};
