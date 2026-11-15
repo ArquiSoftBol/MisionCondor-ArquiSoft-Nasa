@@ -20,6 +20,7 @@ import { ListaHolo, Dron, flotante, destello, HOJAS_TALLER } from '../ui/taller'
 import { cintillo, type Cintillo } from '../ui/boton';
 import { escarcha } from '../ui/ambiente';
 import { DECORADOS, piso, utileria } from '../ui/decorado';
+import { Palanca } from '../ui/palanca';
 
 const MW = 2200, MH = 1400;                 // tamaño del mundo
 const BASE = { x: 520, y: 760 };            // la nave Orión / Colibrí
@@ -35,6 +36,7 @@ export class Mision5Rover extends Phaser.Scene {
   private escudo!: Actor;
   private teclas!: Record<string, Phaser.Input.Keyboard.Key>;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private palanca!: Palanca;
   private oscuridad!: Phaser.GameObjects.RenderTexture;
   private hielos: Actor[] = [];
   private carga = 0;            // bloques en el carrito
@@ -106,6 +108,7 @@ export class Mision5Rover extends Phaser.Scene {
 
     const kb = this.input.keyboard!;
     this.cursor = kb.createCursorKeys();
+    this.palanca = new Palanca(this);
     this.teclas = kb.addKeys('W,A,S,D,E,SPACE') as Record<string, Phaser.Input.Keyboard.Key>;
     // ignorar la autorrepetición del teclado: mantener la tecla apretada no debe reiniciar la acción
     kb.on('keydown-E', (e: KeyboardEvent) => { if (!e.repeat) this.usar(); });
@@ -166,8 +169,9 @@ export class Mision5Rover extends Phaser.Scene {
     if (c.right.isDown || k.D.isDown) dx += 1;
     if (c.up.isDown || k.W.isDown) dy -= 1;
     if (c.down.isDown || k.S.isDown) dy += 1;
+    if (this.palanca.activa) { dx = this.palanca.vx; dy = this.palanca.vy; }
     const p = this.input.activePointer;
-    if (!dx && !dy && p.isDown && !(p.x > W - 170 && p.y > H - 120)) {
+    if (!dx && !dy && p.isDown && !this.palanca.activa && !(p.x > W - 170 && p.y > H - 120)) {
       const wx = p.worldX - this.rover.x, wy = p.worldY - this.rover.y;
       if (Math.hypot(wx, wy) > 24) { dx = wx; dy = wy; }
     }
@@ -205,7 +209,7 @@ export class Mision5Rover extends Phaser.Scene {
       return true;
     });
     // perforar: mantener USAR cerca de la grieta; la broca se calienta y hay que soltar para que se enfríe
-    const presiona = (this.teclas.E.isDown || this.teclas.SPACE.isDown || this.input.activePointer.isDown) && this.cerca(GRIETA, 140) && this.cepa === 'grieta';
+    const presiona = (this.teclas.E.isDown || this.teclas.SPACE.isDown || (this.input.activePointer.isDown && !this.palanca.activa)) && this.cerca(GRIETA, 140) && this.cepa === 'grieta';
     if (this.perforando > 0 && presiona && !this.enfriando && this.bateria > 0) {
       this.avance += dt; this.calor = Math.min(100, this.calor + dt * segun(48, 62)); this.gastar(dt * 5);
       if (Math.random() < 0.2) Sonido.tecla();

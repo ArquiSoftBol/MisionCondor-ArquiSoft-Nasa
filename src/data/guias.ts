@@ -11,8 +11,10 @@ export interface Guia {
   objetivo: string;
   /** Pasos: [ícono propio (ico_…, ver ui/iconos.ts), texto]. Entre 3 y 4. */
   pasos: [string, string][];
-  /** Controles en una línea. */
+  /** Controles en una línea (teclado y ratón). */
   controles: string;
+  /** Los mismos controles para celular / tableta. */
+  tactil?: string;
 }
 
 export const GUIAS: Record<string, Guia> = {
@@ -27,6 +29,7 @@ export const GUIAS: Record<string, Guia> = {
       ['ico_deshacer', '¿Te equivocaste? Toca la etiqueta del sistema para retirarlo.'],
     ],
     controles: 'Ratón o dedo: tocar  ·  Esc: pausa',
+    tactil: 'Dedo: tocar  ·  ⏸: pausa',
   },
   Mision2Cohete: {
     tema: 'Cohetes por etapas',
@@ -39,6 +42,7 @@ export const GUIAS: Record<string, Guia> = {
       ['ico_tubos', 'Prueba final: gira los tubos hasta unir el tanque con los motores.'],
     ],
     controles: 'Ratón o dedo: tocar  ·  Espacio: soltar la pieza  ·  Esc: pausa',
+    tactil: 'Dedo: tocar  ·  ⏸: pausa',
   },
   Mision3Orion: {
     tema: 'Naves para tripulación',
@@ -51,6 +55,7 @@ export const GUIAS: Record<string, Guia> = {
       ['ico_objetivo', 'Prueba de vacío: toca las fugas antes de que caiga la presión.'],
     ],
     controles: 'Ratón o dedo: tocar  ·  Espacio: soltar la pieza  ·  Esc: pausa',
+    tactil: 'Dedo: tocar  ·  ⏸: pausa',
   },
   Mision4Despegue: {
     tema: 'Despegue y separación de etapas',
@@ -63,6 +68,7 @@ export const GUIAS: Record<string, Guia> = {
       ['ico_estrella', 'Separar justo a tiempo da las 3 estrellas.'],
     ],
     controles: '▲ / ▼ o W / S: acelerador  ·  Espacio o botón: separar  ·  Esc: pausa',
+    tactil: 'Botones ▲ / ▼: acelerador  ·  Botón: separar  ·  ⏸: pausa',
   },
   MisionMarte: {
     tema: 'Tormentas de polvo en Marte',
@@ -75,6 +81,7 @@ export const GUIAS: Record<string, Guia> = {
       ['ico_fuego', 'Vuelve a la nave con el Rover: ¡ignición de escape!'],
     ],
     controles: 'Flechas / WASD o dedo: caminar  ·  E / Espacio (mantener): usar  ·  Esc: pausa',
+    tactil: 'Palanca o dedo: caminar  ·  USAR (mantener): usar  ·  ⏸: pausa',
   },
   Mision5Rover: {
     tema: 'Exploración de Europa y recursos locales (ISRU)',
@@ -87,6 +94,7 @@ export const GUIAS: Record<string, Guia> = {
       ['ico_bateria', 'Vuelve a la nave para cargar batería; evita los géiseres.'],
     ],
     controles: 'Flechas / WASD o dedo: manejar  ·  E / Espacio: usar  ·  Q: escanear  ·  Esc: pausa',
+    tactil: 'Palanca o dedo: manejar  ·  USAR: usar  ·  ESCANEAR: escanear  ·  ⏸: pausa',
   },
 };
 

@@ -21,6 +21,7 @@ import { ListaHolo, flotante, destello } from '../ui/taller';
 import { DECORADOS, piso } from '../ui/decorado';
 import { Oscuridad, sombra, polvoPasos } from '../ui/coopEstilo';
 import { vineta } from '../ui/ambiente';
+import { Palanca } from '../ui/palanca';
 
 const MW = 2000, MH = 1300;
 const NAVE = { x: 380, y: 740 };
@@ -62,6 +63,7 @@ export class MisionMarte extends Phaser.Scene {
   private flecha!: Phaser.GameObjects.Triangle;
   private teclas!: Record<string, Phaser.Input.Keyboard.Key>;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private palanca!: Palanca;
   private ultimoPaso = 0;
   private usarBtn!: Phaser.GameObjects.Container;
 
@@ -117,6 +119,7 @@ export class MisionMarte extends Phaser.Scene {
 
     const kb = this.input.keyboard!;
     this.cursor = kb.createCursorKeys();
+    this.palanca = new Palanca(this);
     this.teclas = kb.addKeys('W,A,S,D,E,SPACE') as Record<string, Phaser.Input.Keyboard.Key>;
     this.cameras.main.startFollow(this.yo, true, 0.1, 0.1);
 
@@ -280,8 +283,9 @@ export class MisionMarte extends Phaser.Scene {
     if (c.right.isDown || k.D.isDown) dx += 1;
     if (c.up.isDown || k.W.isDown) dy -= 1;
     if (c.down.isDown || k.S.isDown) dy += 1;
+    if (this.palanca.activa) { dx = this.palanca.vx; dy = this.palanca.vy; }
     const p = this.input.activePointer;
-    if (!dx && !dy && p.isDown && !this.usando && !(p.x > W - 170 && p.y > H - 120)) {
+    if (!dx && !dy && p.isDown && !this.palanca.activa && !this.usando && !(p.x > W - 170 && p.y > H - 120)) {
       const wx = p.worldX - this.yo.x, wy = p.worldY - this.yo.y;
       if (Math.hypot(wx, wy) > 24) { dx = wx; dy = wy; }
     }

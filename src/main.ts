@@ -30,6 +30,7 @@ import { Capitulo } from './scenes/Capitulo';
 import { MisionMarte } from './scenes/MisionMarte';
 import { instalarTraduccion, cambiarIdioma } from './core/idioma';
 import { Musica } from './core/musica';
+import { esTactil } from './ui/palanca';
 
 // Idioma: ?idioma=en / ?idioma=es fuerza uno (útil para probar); si no, el guardado en el perfil.
 const pedido = new URLSearchParams(location.search).get('idioma');
@@ -61,6 +62,22 @@ juego.events.once(Phaser.Core.Events.READY, () => {
 window.addEventListener('keydown', e => {
   if (e.key.toLowerCase() === 'f' && !(e.target instanceof HTMLInputElement)) juego.scale.toggleFullscreen();
 });
+
+// Celulares y tabletas: al primer toque, pantalla completa y horizontal fijo (Android y la mayoría de navegadores).
+// iPhone no deja usar pantalla completa en una web: ahí se instala con «Compartir → Agregar a inicio» (manifest).
+if (esTactil()) {
+  const instalada = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+  const alTocar = (e: PointerEvent) => {
+    if (e.target instanceof HTMLInputElement) return;   // no interrumpir mientras se escribe un nombre o código
+    window.removeEventListener('pointerup', alTocar);
+    if (instalada || !juego.scale.fullscreen.available || juego.scale.isFullscreen) return;
+    try {
+      juego.scale.startFullscreen();
+      (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape').catch(() => undefined);
+    } catch { /* el navegador no lo permite: se sigue jugando igual */ }
+  };
+  window.addEventListener('pointerup', alTocar);
+}
 
 // Red de seguridad: si el navegador pierde el contexto gráfico (poca memoria en celulares o dentro de un visor),
 // en vez de quedar congelado se recarga y retoma desde el progreso guardado.

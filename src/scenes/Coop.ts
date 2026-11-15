@@ -16,6 +16,7 @@ import { ROLES, type VistaSala } from './MultiLobby';
 import { vineta } from '../ui/ambiente';
 import { grano } from '../ui/cine';
 import { costraDeSal, senderos, cartel, sombra, polvoPasos, faro, Oscuridad, presentarRol, NOMBRE_EDIFICIO } from '../ui/coopEstilo';
+import { Palanca, esTactil } from '../ui/palanca';
 
 type Rol = 'ingeniero' | 'recolector';
 interface ItemDef { id: string; sprite: string; nombre: string; kg: number; sistema?: string | null; x: number; y: number; zona: string; rechazo?: string }
@@ -56,6 +57,7 @@ export class Coop extends Phaser.Scene {
   private solidos: Cuerpo[] = [];
   private teclas!: Record<string, Phaser.Input.Keyboard.Key>;
   private cursor!: Phaser.Types.Input.Keyboard.CursorKeys;
+  private palanca!: Palanca;
   private ultimoEnvio = 0;
   private hud!: Phaser.GameObjects.Text;
   private reloj!: Phaser.GameObjects.Text;
@@ -152,6 +154,7 @@ export class Coop extends Phaser.Scene {
     this.interfaz();
     const kb = this.input.keyboard!;
     this.cursor = kb.createCursorKeys();
+    this.palanca = new Palanca(this);
     this.teclas = kb.addKeys('W,A,S,D') as Record<string, Phaser.Input.Keyboard.Key>;
     kb.on('keydown', (ev: KeyboardEvent) => {
       if (ev.repeat) return;
@@ -193,7 +196,7 @@ export class Coop extends Phaser.Scene {
     this.mini = this.add.graphics().setScrollFactor(0).setDepth(90000);
     const usar = boton(this, W - 86, H - 64, 'USAR', () => this.usar(), { ancho: 130, alto: 60, variante: 'primario', retardo: 0 });
     usar.setScrollFactor(0, 0, true).setDepth(90001);
-    this.add.text(W - 16, H - 12, t('WASD / flechas: moverse · E: usar'), { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: '#7f93b5' }).setOrigin(1, 1).setScrollFactor(0).setDepth(90001);
+    this.add.text(W - 16, H - 12, t(esTactil() ? 'Palanca: moverse · USAR: usar' : 'WASD / flechas: moverse · E: usar'), { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: '#7f93b5' }).setOrigin(1, 1).setScrollFactor(0).setDepth(90001);
   }
 
   private def(id: string): ItemDef { return this.esc.items.find(i => i.id === id)!; }
@@ -349,8 +352,9 @@ export class Coop extends Phaser.Scene {
       if (c.right.isDown || k.D.isDown) dx += 1;
       if (c.up.isDown || k.W.isDown) dy -= 1;
       if (c.down.isDown || k.S.isDown) dy += 1;
+      if (this.palanca.activa) { dx = this.palanca.vx; dy = this.palanca.vy; }
       const p = this.input.activePointer;
-      if (!dx && !dy && p.isDown && !(p.x > W - 170 && p.y > H - 110)) { const wx = p.worldX - this.yoA.x, wy = p.worldY - this.yoA.y; if (Math.hypot(wx, wy) > 24) { dx = wx; dy = wy; } }
+      if (!dx && !dy && p.isDown && !this.palanca.activa && !(p.x > W - 170 && p.y > H - 110)) { const wx = p.worldX - this.yoA.x, wy = p.worldY - this.yoA.y; if (Math.hypot(wx, wy) > 24) { dx = wx; dy = wy; } }
     }
     const mov = !!(dx || dy);
     if (mov) {

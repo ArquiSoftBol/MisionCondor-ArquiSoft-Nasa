@@ -22,6 +22,7 @@ import { confeti } from '../ui/tarjeta';
 import { vineta, fugaces, luna, horizonte, polvo, escarcha, chispas, hangar } from '../ui/ambiente';
 import { DECORADOS, piso, cordillera, utileria, nubes } from '../ui/decorado';
 import { colorear, grano, Telon, aurora, rayos, calidadAlta, type Look, type Transicion } from '../ui/cine';
+import { esTactil } from '../ui/palanca';
 
 // Color de cada cuadro (por acto) y transición con la que se ENTRA a cada cuadro.
 const LOOK: Record<string, Look> = {
@@ -1051,7 +1052,7 @@ export class Cinematica extends Phaser.Scene {
     // chip de la etapa, a la medida de su texto (en inglés es más largo)
     const etapa = this.add.text(20, 14, this.bloque.etapa, { fontFamily: FUENTE_PIXEL, fontSize: '9px', color: '#1a1200' }).setOrigin(0, 0.5).setDepth(52);
     this.add.graphics().setDepth(51).fillStyle(0xffe14d, 1).fillRoundedRect(10, 4, etapa.width + 20, 20, 6);
-    this.add.text(W - 14, 8, 'Toca lo señalado · Espacio: seguir · Esc: saltar · F: pantalla completa', { fontFamily: FUENTE, fontSize: '11px', color: '#9aa3b5' }).setOrigin(1, 0).setDepth(51);
+    this.add.text(W - 14, 8, esTactil() ? 'Toca lo señalado · toca la pantalla para seguir' : 'Toca lo señalado · Espacio: seguir · Esc: saltar · F: pantalla completa', { fontFamily: FUENTE, fontSize: '11px', color: '#9aa3b5' }).setOrigin(1, 0).setDepth(51);
     const n = this.bloque.cuadros.length;
     this.puntos = Array.from({ length: n }, (_, k) => this.add.circle(W / 2 + (k - (n - 1) / 2) * 14, 14, 3.5, 0x33405a).setDepth(52));
     this.flecha = this.add.text(W - 40, H - 22, '▼', { fontFamily: FUENTE, fontSize: '16px', color: '#ffe14d' }).setOrigin(0.5).setDepth(53).setVisible(false);

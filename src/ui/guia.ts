@@ -5,6 +5,7 @@ import { W, FUENTE, FUENTE_PIXEL } from '../config';
 import { t } from '../core/idioma';
 import type { Guia } from '../data/guias';
 import { icono, esIcono } from './iconos';
+import { esTactil } from './palanca';
 
 type Obj = Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.AlphaSingle;
 
@@ -58,7 +59,7 @@ export function contenidoGuia(s: Phaser.Scene, g: Guia, arriba: number): Obj[] {
   });
 
   // controles + idea clave del tema
-  objs.push(lineaConIcono(s, W / 2, y0 + alto + 24, 'ico_teclado', t(g.controles), { fontFamily: FUENTE, fontSize: '13px', fontStyle: '700', color: '#9fdcff' }));
+  objs.push(lineaConIcono(s, W / 2, y0 + alto + 24, 'ico_teclado', t(esTactil() && g.tactil ? g.tactil : g.controles), { fontFamily: FUENTE, fontSize: '13px', fontStyle: '700', color: '#9fdcff' }));
   objs.push(lineaConIcono(s, W / 2, y0 + alto + 50, 'ico_idea', t(g.idea), { fontFamily: FUENTE, fontSize: '13px', fontStyle: 'italic 700', color: '#c8d6ec' }));
   return objs;
 }

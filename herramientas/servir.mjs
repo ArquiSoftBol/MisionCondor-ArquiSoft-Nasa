@@ -17,7 +17,7 @@ const RAIZ = path.dirname(fileURLToPath(import.meta.url));
 const PUERTO = Number(process.env.PORT) || (fs.existsSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'index.html')) ? 8080 : 8787);   // 8787: solo multijugador (desarrollo)
 const CON_JUEGO = fs.existsSync(path.join(RAIZ, 'index.html'));
 const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2', '.woff': 'font/woff', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8' };
+  '.png': 'image/png', '.json': 'application/json', '.woff2': 'font/woff2', '.woff': 'font/woff', '.svg': 'image/svg+xml', '.mp3': 'audio/mpeg', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain; charset=utf-8' };
 
 // ───────────────────────── Base de datos ─────────────────────────
 const DATOS = process.env.CONDOR_DATOS || path.join(RAIZ, 'datos');

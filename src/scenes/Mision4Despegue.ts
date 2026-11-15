@@ -17,6 +17,7 @@ import { tarjetaMision, tarjetaResultado } from '../ui/tarjeta';
 import { instalarPausa } from './Pausa';
 import { ListaHolo, flotante } from '../ui/taller';
 import { DECORADOS, piso, cordillera } from '../ui/decorado';
+import { esTactil } from '../ui/palanca';
 
 type Fase = 'espera' | 'cuenta' | 'propulsores' | 'central' | 'superior' | 'orbita';
 
@@ -199,7 +200,7 @@ export class Mision4Despegue extends Phaser.Scene {
   private ventana(texto: string, pasado: number): void {
     if (!this.botonSep) {
       this.barra.setFillStyle(0xff4a3d);
-      this.botonSep = boton(this, W / 2, 470, texto + '  [ESPACIO]', () => this.separar(), { ancho: 420, color: 0x3cff6a });
+      this.botonSep = boton(this, W / 2, 470, texto + (esTactil() ? '' : '  [ESPACIO]'), () => this.separar(), { ancho: 420, color: 0x3cff6a });
       this.tweens.add({ targets: this.botonSep, alpha: 0.5, duration: 250, yoyo: true, repeat: -1 });
       Sonido.alarma();
     }

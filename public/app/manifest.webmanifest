@@ -1,0 +1,19 @@
+{
+  "name": "Misión Cóndor",
+  "short_name": "Misión Cóndor",
+  "description": "Juego de ARQUISOFT para el NASA Space Apps Challenge 2026: modo historia y multijugador por código de sala.",
+  "lang": "es",
+  "start_url": "../",
+  "scope": "../",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "categories": ["games", "education"],
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
