@@ -54,11 +54,14 @@ export const ARQUISOFT = {
   lema: '[Lema del equipo]',
   quienes: 'ARQUISOFT es un equipo boliviano de desarrollo de software que participa en el NASA Space Apps Challenge 2026 con Misión Cóndor: un juego web para aprender cómo se diseña una misión espacial, contado desde el Salar de Uyuni.',
   mision: 'Hacer que la ciencia y la ingeniería espacial se sientan cercanas: que cualquier persona, con un celular y sin instalar nada, entienda por qué cada kilo, cada vatio y cada gota de combustible importan.',
+  // rol: escribir aquí el rol de cada integrante (p. ej. 'Programación'); vacío = no se muestra
   integrantes: [
-    { nombre: '[Nombre 1]', rol: '[Rol · p. ej. Dirección y guion]' },
-    { nombre: '[Nombre 2]', rol: '[Rol · p. ej. Programación]' },
-    { nombre: '[Nombre 3]', rol: '[Rol · p. ej. Arte y sprites]' },
-    { nombre: '[Nombre 4]', rol: '[Rol · p. ej. Ciencia y datos]' },
+    { nombre: 'Ronald Augusto Rodriguez Serrano', rol: '' },
+    { nombre: 'Carla Loayza Leiguez', rol: '' },
+    { nombre: 'Gabriela Belén Crespo Cárdenas', rol: '' },
+    { nombre: 'Roby Daniel Duran Aguilar', rol: '' },
+    { nombre: 'Victor Hugo Murillo Siles', rol: '' },
+    { nombre: 'Helen Valeria Montaño Gutierrez', rol: '' },
   ],
   sede: '[Ciudad · sede local del Space Apps]',
 };

@@ -188,7 +188,7 @@ export class Fin extends Phaser.Scene {
       ['n', 'MISIÓN CÓNDOR'], ['x', 'Una misión al océano escondido de Europa'], ['e', ''],
       ['t', 'UN JUEGO DE'], ['n', 'ARQUISOFT'], ['x', 'Equipo boliviano de desarrollo de software'], ['e', ''],
       ['t', 'EQUIPO'],
-      ...(integrantes.length ? integrantes.flatMap(i => [['n', i.nombre], ['x', i.rol.replace(/^\[|\]$/g, '')]] as [string, string][]) : [['n', 'Equipo ARQUISOFT'] as [string, string]]),
+      ...(integrantes.length ? integrantes.flatMap(i => (i.rol && !i.rol.startsWith('[') ? [['n', i.nombre], ['x', i.rol]] : [['n', i.nombre]]) as [string, string][]) : [['n', 'Equipo ARQUISOFT'] as [string, string]]),
       ['e', ''],
       ['t', 'PROTAGONISTAS'], ['n', '{NOMBRE}'], ['x', 'Ingenier@ aeroespacial de la Ciudadela'], ['n', '{MASCOTA}'], ['x', 'Quien esperó en la puerta'], ['n', 'Rover explorador'], ['x', 'Se quedó en Europa para que la cura volviera'], ['e', ''],
       ['t', 'MINIJUEGOS'], ...MISIONES.map(m => ['x', FLUJO.find(p => p.escena === m.escena)?.titulo ?? m.escena] as [string, string]), ['e', ''],

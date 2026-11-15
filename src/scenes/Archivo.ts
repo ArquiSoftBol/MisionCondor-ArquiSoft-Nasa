@@ -130,16 +130,17 @@ export class Archivo extends Phaser.Scene {
     }
     this.contenido.add(g);
     this.t(PX + 140, PY + 40, 'ARQUISOFT', { fontSize: '34px', fontStyle: '600' });
-    this.t(PX + 142, PY + 84, ARQUISOFT.lema, { fontSize: '14px', fontStyle: 'italic 700', color: '#9fdcff' });
-    this.t(PX + PW - 20, PY + 12, ARQUISOFT.sede, { fontSize: '12px', color: '#8b96ab' }).setOrigin(1, 0);
+    if (!ARQUISOFT.lema.startsWith('[')) this.t(PX + 142, PY + 84, ARQUISOFT.lema, { fontSize: '14px', fontStyle: 'italic 700', color: '#9fdcff' });
+    if (!ARQUISOFT.sede.startsWith('[')) this.t(PX + PW - 20, PY + 12, ARQUISOFT.sede, { fontSize: '12px', color: '#8b96ab' }).setOrigin(1, 0);
     const p = this.pila(PY + 122);
     p.sub('QUIÉNES SOMOS'); p.par(ARQUISOFT.quienes);
     p.sub('NUESTRA MISIÓN'); p.par(ARQUISOFT.mision);
     p.sub('EQUIPO');
+    const conRol = ARQUISOFT.integrantes.some(m => m.rol && !m.rol.startsWith('['));
     ARQUISOFT.integrantes.forEach((m, i) => {
-      const x = PX + 30 + (i % 2) * 290, y = p.y + Math.floor(i / 2) * 38;
-      this.t(x, y, `● ${m.nombre}`, { fontSize: '15px', fontStyle: '800', color: CSS.amarillo });
-      this.t(x + 14, y + 18, m.rol, { fontSize: '12px', color: '#c8d0e0' });
+      const x = PX + 30 + (i % 2) * 290, y = p.y + Math.floor(i / 2) * (conRol ? 38 : 26);
+      this.t(x, y, `● ${m.nombre}`, { fontSize: '14px', fontStyle: '800', color: CSS.amarillo });
+      if (m.rol && !m.rol.startsWith('[')) this.t(x + 14, y + 18, m.rol, { fontSize: '12px', color: '#c8d0e0' });
     });
   }
 
