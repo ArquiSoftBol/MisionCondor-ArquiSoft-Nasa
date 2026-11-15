@@ -14,7 +14,7 @@ Reglas que salen de ahí:
 | Necesita **Node 22.5 o más** (la imagen usa Node 24) | usa `node:sqlite`, que viene dentro de Node |
 | Necesita un hosting que corra un **proceso** (no solo archivos) | el WebSocket y la base viven en el proceso |
 | **Una sola instancia** (no escalar a 2+) | las salas están en memoria; dos jugadores en procesos distintos no se encuentran |
-| **Disco persistente** montado en `CONDOR_DATOS` | si no, el ranking y los correos se borran en cada redeploy |
+| **Disco persistente** montado en `CONDOR_DATOS` | si no, el ranking se borra en cada redeploy |
 | HTTPS en producción | el cliente usa `wss://` cuando la página es `https://` (automático) |
 
 Variables:

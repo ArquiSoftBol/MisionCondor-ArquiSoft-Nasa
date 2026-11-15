@@ -1,7 +1,7 @@
 // Servidor de Misión Cóndor — sin dependencias (solo Node.js 22.5+; se probó con Node 24):
 //   · sirve el juego (si junto a este archivo está index.html, como en dist/)
 //   · MULTIJUGADOR por WebSocket en /ws: salas con código, roles Ingeniero / Recolector, estado compartido
-//   · base de datos SQLite (node:sqlite, incluida en Node): jugadores por correo, salas y partidas
+//   · base de datos SQLite (node:sqlite, incluida en Node): jugadores (sin correo: clave anónima del navegador), salas y partidas
 //   · API: GET /api/salud · GET /api/ranking?escenario=salar
 // Uso:  node servir.mjs        → http://localhost:8080   (PORT=xxxx para otro puerto)
 // Datos: carpeta datos/ junto a este archivo (o CONDOR_DATOS=/ruta).
@@ -23,20 +23,22 @@ const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 const DATOS = process.env.CONDOR_DATOS || path.join(RAIZ, 'datos');
 fs.mkdirSync(DATOS, { recursive: true });
 const db = new DatabaseSync(path.join(DATOS, 'condor.db'));
+// versiones anteriores identificaban por correo: la columna pasa a llamarse «clave»
+try { if (db.prepare('PRAGMA table_info(jugadores)').all().some(c => c.name === 'email')) db.exec('ALTER TABLE jugadores RENAME COLUMN email TO clave'); } catch { /* tabla nueva */ }
 db.exec(`
-  CREATE TABLE IF NOT EXISTS jugadores (email TEXT PRIMARY KEY, nombre TEXT NOT NULL, creado INTEGER NOT NULL, visto INTEGER NOT NULL);
+  CREATE TABLE IF NOT EXISTS jugadores (clave TEXT PRIMARY KEY, nombre TEXT NOT NULL, creado INTEGER NOT NULL, visto INTEGER NOT NULL);
   CREATE TABLE IF NOT EXISTS salas (codigo TEXT PRIMARY KEY, escenario TEXT NOT NULL, anfitrion TEXT NOT NULL, creada INTEGER NOT NULL, estado TEXT NOT NULL);
   CREATE TABLE IF NOT EXISTS partidas (id INTEGER PRIMARY KEY AUTOINCREMENT, sala TEXT, escenario TEXT, ingeniero TEXT, recolector TEXT,
     segundos INTEGER, errores INTEGER, estrellas INTEGER, fecha INTEGER);
 `);
 const q = {
-  jugador: db.prepare('INSERT INTO jugadores (email, nombre, creado, visto) VALUES (?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET nombre = excluded.nombre, visto = excluded.visto'),
+  jugador: db.prepare('INSERT INTO jugadores (clave, nombre, creado, visto) VALUES (?, ?, ?, ?) ON CONFLICT(clave) DO UPDATE SET nombre = excluded.nombre, visto = excluded.visto'),
   sala: db.prepare('INSERT OR REPLACE INTO salas (codigo, escenario, anfitrion, creada, estado) VALUES (?, ?, ?, ?, ?)'),
   estadoSala: db.prepare('UPDATE salas SET estado = ? WHERE codigo = ?'),
   partida: db.prepare('INSERT INTO partidas (sala, escenario, ingeniero, recolector, segundos, errores, estrellas, fecha) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
   mejores: db.prepare('SELECT escenario, MAX(estrellas) AS estrellas, MIN(segundos) AS segundos, COUNT(*) AS partidas FROM partidas WHERE ingeniero = ? OR recolector = ? GROUP BY escenario'),
   ranking: db.prepare(`SELECT p.estrellas, p.segundos, p.errores, ji.nombre AS ingeniero, jr.nombre AS recolector, p.fecha FROM partidas p
-    LEFT JOIN jugadores ji ON ji.email = p.ingeniero LEFT JOIN jugadores jr ON jr.email = p.recolector
+    LEFT JOIN jugadores ji ON ji.clave = p.ingeniero LEFT JOIN jugadores jr ON jr.clave = p.recolector
     WHERE p.escenario = ? ORDER BY p.estrellas DESC, p.segundos ASC LIMIT 10`),
 };
 
@@ -100,7 +102,7 @@ function aceptarWS(req, socket, alConectar) {
 const salas = new Map();   // codigo → sala
 const LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const nuevoCodigo = () => { let c; do { c = Array.from({ length: 6 }, () => LETRAS[crypto.randomInt(LETRAS.length)]).join(''); } while (salas.has(c)); return c; };
-const correoValido = e => typeof e === 'string' && e.length <= 120 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+const claveValida = k => typeof k === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(k);   // la genera el navegador (no es un dato personal)
 const limpiar = (s, n = 24) => String(s ?? '').replace(/[<>]/g, '').trim().slice(0, n);
 
 function vistaSala(s) {
@@ -132,7 +134,7 @@ function terminar(s) {
   let estrellas = segundos <= esc.tiempo * 0.6 ? 3 : segundos <= esc.tiempo ? 2 : 1;
   if (e.errores >= 3) estrellas = Math.max(1, estrellas - 1);
   const ing = s.jugadores.find(j => j.rol === 'ingeniero'), rec = s.jugadores.find(j => j.rol === 'recolector');
-  q.partida.run(s.codigo, s.escenario, ing?.email ?? null, rec?.email ?? null, segundos, e.errores, estrellas, Date.now());
+  q.partida.run(s.codigo, s.escenario, ing?.clave ?? null, rec?.clave ?? null, segundos, e.errores, estrellas, Date.now());
   q.estadoSala.run('terminada', s.codigo);
   e.fin = { segundos, errores: e.errores, estrellas };
   s.fase = 'fin';
@@ -170,14 +172,14 @@ function mensaje(j, m) {
       salir(j);
       const sala = { codigo: nuevoCodigo(), escenario: m.escenario, fase: 'espera', jugadores: [j], creada: Date.now() };
       salas.set(sala.codigo, sala);
-      q.sala.run(sala.codigo, sala.escenario, j.email, sala.creada, 'espera');
+      q.sala.run(sala.codigo, sala.escenario, j.clave, sala.creada, 'espera');
       Object.assign(j, { sala, rol: 'ingeniero', listo: false });
       return avisarSala(sala);
     }
     case 'unirse': {
       const sala = salas.get(String(m.codigo ?? '').toUpperCase().trim());
       if (!sala) return j.con.enviar({ t: 'error', msg: 'No existe una sala con ese código.' });
-      const antes = sala.jugadores.find(x => x.email === j.email);
+      const antes = sala.jugadores.find(x => x.clave === j.clave);
       if (antes) {   // vuelve a conectarse: recupera su lugar y su rol
         salir(j);
         Object.assign(antes, { con: j.con, id: j.id });
@@ -301,15 +303,16 @@ function conectar(con) {
   con.alMensaje = m => {
     if (!m || typeof m.t !== 'string') return;
     if (m.t === 'hola') {
-      if (!correoValido(m.email)) return con.enviar({ t: 'error', msg: 'Escribe un correo válido.' });
-      const email = m.email.toLowerCase(), nombre = limpiar(m.nombre) || email.split('@')[0];
-      q.jugador.run(email, nombre, Date.now(), Date.now());
-      jugador = { id: siguienteId++, email, nombre, con, sala: null, rol: null, listo: false, pos: null };
+      const nombre = limpiar(m.nombre, 18);
+      if (nombre.length < 2) return con.enviar({ t: 'error', msg: 'Escribe un nombre de al menos 2 letras.' });
+      const clave = claveValida(m.clave) ? m.clave : crypto.randomUUID();
+      q.jugador.run(clave, nombre, Date.now(), Date.now());
+      jugador = { id: siguienteId++, clave, nombre, con, sala: null, rol: null, listo: false, pos: null };
       con.duenio = jugador;
-      return con.enviar({ t: 'bienvenida', id: jugador.id, nombre, mejores: q.mejores.all(email, email), escenarios: Object.keys(ESCENARIOS).filter(k => k !== 'nota') });
+      return con.enviar({ t: 'bienvenida', id: jugador.id, nombre, mejores: q.mejores.all(clave, clave), escenarios: Object.keys(ESCENARIOS).filter(k => k !== 'nota') });
     }
     const j = con.duenio;
-    if (!j) return con.enviar({ t: 'error', msg: 'Primero identifícate con tu correo.' });
+    if (!j) return con.enviar({ t: 'error', msg: 'Primero escribe tu nombre.' });
     mensaje(j, m);
   };
   con.alCerrar = () => {

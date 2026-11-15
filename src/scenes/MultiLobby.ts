@@ -1,10 +1,10 @@
-// MULTIJUGADOR · lobby: identificarse con el correo → crear sala (con escenario) o unirse con un código → sala de espera
+// MULTIJUGADOR · lobby: escribir tu nombre (sin correo) → crear sala (con escenario) o unirse con un código → sala de espera
 // con los dos jugadores, elección de rol (Ingeniero / Recolector) y «Estoy listo». Cuando los dos están listos, empieza.
 import Phaser from 'phaser';
 import { W, H, FUENTE, FUENTE_PIXEL, CSS } from '../config';
 import { Sonido } from '../core/audio';
 import { t } from '../core/idioma';
-import { Red, leerIdentidad, guardarIdentidad } from '../core/red';
+import { Red, leerIdentidad, guardarIdentidad, crearIdentidad } from '../core/red';
 import { boton, panel, aviso } from '../ui/boton';
 import { segmentado } from '../ui/controles';
 import { fondoSalar, HOJAS_ESCENARIO } from '../ui/escenarios';
@@ -81,7 +81,7 @@ export class MultiLobby extends Phaser.Scene {
   private campo(y: number, tipo: string, valor: string, ph: string, max: number, x = W / 2): HTMLInputElement {
     const dom = this.add.dom(x, y, 'input', ESTILO).setDepth(20);
     const el = dom.node as HTMLInputElement;
-    el.type = tipo; el.value = valor; el.placeholder = t(ph); el.maxLength = max; el.autocomplete = tipo === 'email' ? 'email' : 'off'; el.spellcheck = false;
+    el.type = tipo; el.value = valor; el.placeholder = t(ph); el.maxLength = max; el.autocomplete = 'off'; el.spellcheck = false;
     el.addEventListener('keydown', e => e.stopPropagation());
     this.doms.push(dom);
     return el;
@@ -89,26 +89,23 @@ export class MultiLobby extends Phaser.Scene {
 
   // ───────── 1 · identidad ─────────
   private pantallaIdentidad(): void {
-    const c = this.nuevaCapa('TU IDENTIDAD', 600, 360);
+    const c = this.nuevaCapa('TU NOMBRE', 600, 300);
     const id = leerIdentidad();
-    c.add(this.add.text(W / 2, 168, t('Tu correo guarda tus partidas y récords en este servidor.'), { fontFamily: FUENTE, fontSize: '14px', fontStyle: '700', color: '#c8d6ec' }).setOrigin(0.5));
-    c.add(this.add.text(W / 2 - 210, 206, t('CORREO'), { fontFamily: FUENTE_PIXEL, fontSize: '9px', color: '#3ff3ff' }));
-    const correo = this.campo(240, 'email', id?.email ?? '', 'tucorreo@ejemplo.com', 120);
-    c.add(this.add.text(W / 2 - 210, 286, t('NOMBRE EN LA PARTIDA'), { fontFamily: FUENTE_PIXEL, fontSize: '9px', color: '#3ff3ff' }));
-    const nombre = this.campo(320, 'text', id?.nombre ?? '', 'Cómo te verá tu compañero', 18);
-    c.add(this.add.text(W / 2, 360, t('No se publica: solo lo ve el equipo que juega contigo.'), { fontFamily: FUENTE, fontSize: '11px', fontStyle: 'italic 700', color: '#8a9cbc' }).setOrigin(0.5));
+    c.add(this.add.text(W / 2, 190, t('Sin correo ni registro: solo tu nombre y el código de la sala.'), { fontFamily: FUENTE, fontSize: '14px', fontStyle: '700', color: '#c8d6ec' }).setOrigin(0.5));
+    c.add(this.add.text(W / 2 - 210, 232, t('NOMBRE EN LA PARTIDA'), { fontFamily: FUENTE_PIXEL, fontSize: '9px', color: '#3ff3ff' }));
+    const nombre = this.campo(266, 'text', id?.nombre ?? '', 'Cómo te verá tu compañero', 18);
+    c.add(this.add.text(W / 2, 310, t('No se publica: solo lo ve el equipo que juega contigo.'), { fontFamily: FUENTE, fontSize: '11px', fontStyle: 'italic 700', color: '#8a9cbc' }).setOrigin(0.5));
     const entrar = () => {
-      const email = correo.value.trim().toLowerCase(), n = nombre.value.trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { Sonido.mal(); aviso(this, 'Escribe un correo válido.', CSS.rojo, 110); return; }
+      const n = nombre.value.trim();
       if (n.length < 2) { Sonido.mal(); aviso(this, 'Escribe un nombre de al menos 2 letras.', CSS.rojo, 110); return; }
-      const ident = { email, nombre: n };
+      const ident = crearIdentidad(n);
       guardarIdentidad(ident);
       Red.conectar(ident);
       this.time.delayedCall(2500, () => { if (!Red.conectada && this.scene.isActive()) aviso(this, 'No hay conexión con el servidor multijugador. ¿Está encendido? (npm run servidor)', CSS.rojo, 110); });
     };
-    [correo, nombre].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); }));
-    c.add(boton(this, W / 2, 412, 'Entrar', entrar, { ancho: 220, variante: 'exito', icono: '➜', retardo: 0 }));
-    this.time.delayedCall(200, () => correo.focus());
+    nombre.addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+    c.add(boton(this, W / 2, 372, 'Entrar', entrar, { ancho: 220, variante: 'exito', icono: '➜', retardo: 0 }));
+    this.time.delayedCall(200, () => nombre.focus());
   }
 
   // ───────── 2 · crear o unirse ─────────

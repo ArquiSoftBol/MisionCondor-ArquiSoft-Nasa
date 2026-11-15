@@ -3,8 +3,18 @@
 type Oyente = (m: Record<string, unknown>) => void;
 
 const CLAVE = 'mision-condor:coop';
-export interface Identidad { email: string; nombre: string }
-export const leerIdentidad = (): Identidad | null => { try { const v = localStorage.getItem(CLAVE); return v ? JSON.parse(v) : null; } catch { return null; } };
+/** Sin correo: «clave» es un código anónimo al azar de este navegador (sirve para volver a la sala tras un corte). */
+export interface Identidad { clave: string; nombre: string }
+const nuevaClave = (): string => (crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`);
+export const leerIdentidad = (): Identidad | null => {
+  try {
+    const v = localStorage.getItem(CLAVE);
+    if (!v) return null;
+    const i = JSON.parse(v) as Partial<Identidad>;
+    return { clave: i.clave || nuevaClave(), nombre: i.nombre ?? '' };   // las identidades viejas (con correo) se convierten
+  } catch { return null; }
+};
+export const crearIdentidad = (nombre: string): Identidad => ({ clave: leerIdentidad()?.clave || nuevaClave(), nombre });
 export const guardarIdentidad = (i: Identidad): void => { try { localStorage.setItem(CLAVE, JSON.stringify(i)); } catch { /* sin guardado */ } };
 
 class Conexion {
@@ -28,7 +38,7 @@ class Conexion {
     return `${proto}://${location.host}/ws`;
   }
 
-  /** Conecta (si no lo está) y se identifica con el correo. */
+  /** Conecta (si no lo está) y se presenta con su nombre. */
   conectar(id: Identidad): void {
     this.identidad = id;
     this.cerrandoAdrede = false;
