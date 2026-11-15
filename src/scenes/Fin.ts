@@ -12,7 +12,8 @@ import { W, H, FUENTE, FUENTE_PIXEL } from '../config';
 import { perfil, lograr, spriteProtagonista } from '../core/estado';
 import { Actor, cargar } from '../core/sprites';
 import { nebulosa, estrellas, degradado } from '../ui/fondo';
-import { boton } from '../ui/boton';
+import { boton, botonSaltar } from '../ui/boton';
+import { esTactil } from '../ui/palanca';
 import { Musica } from '../core/musica';
 import { Sonido } from '../core/audio';
 import { t } from '../core/idioma';
@@ -53,12 +54,13 @@ export class Fin extends Phaser.Scene {
     this.etapa = 0; this.capa = null; this.eventos = []; this.bloqueo = 0;
     this.cameras.main.setBackgroundColor('#000000').fadeIn(1200);
     grano(this, 9500, 0.05);
-    const pista = this.add.text(W - 14, H - 10, t('Toca para adelantar · Esc: saltar'), { fontFamily: FUENTE, fontSize: '11px', color: '#7f8aa0' }).setOrigin(1, 1).setDepth(9600);
+    const pista = this.add.text(W - 14, H - 10, t(esTactil() ? 'Toca para adelantar' : 'Toca para adelantar · Esc: saltar'), { fontFamily: FUENTE, fontSize: '11px', color: '#7f8aa0' }).setOrigin(1, 1).setDepth(9600);
     this.tweens.add({ targets: pista, alpha: 0.35, duration: 1200, yoyo: true, repeat: -1 });
     this.input.on('pointerdown', () => this.adelantar());
     this.input.keyboard?.on('keydown-SPACE', () => this.adelantar());
     this.input.keyboard?.on('keydown-ENTER', () => this.adelantar());
     this.input.keyboard?.on('keydown-ESC', () => { if (this.etapa < 6) this.ir(6); });
+    const saltar = botonSaltar(this, () => { if (this.etapa < 6) { this.ir(6); saltar.destroy(); } }, W - 70, 28);
     this.ir(1);
   }
 

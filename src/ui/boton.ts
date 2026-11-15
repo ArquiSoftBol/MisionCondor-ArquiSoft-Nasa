@@ -1,7 +1,7 @@
 // Kit de interfaz animado de Misión Cóndor: botones, paneles holográficos, cintillos y avisos.
 // Todo se dibuja con Graphics (sin imágenes) y se anima con tweens: liviano en celulares.
 import Phaser from 'phaser';
-import { W, FUENTE, FUENTE_PIXEL } from '../config';
+import { W, H, FUENTE, FUENTE_PIXEL } from '../config';
 import { Sonido } from '../core/audio';
 import { icono as iconoPropio, esIcono } from './iconos';
 
@@ -200,4 +200,28 @@ export function cascada(scene: Phaser.Scene, objs: (Phaser.GameObjects.Component
     o.setAlpha(0); o.y = y + 14;
     scene.tweens.add({ targets: o, alpha: 1, y, duration: 320, delay: desde + i * paso, ease: 'Cubic.out' });
   });
+}
+
+/** Botón «Saltar ▸▸» para cinemáticas: visible en todos los aparatos (en celular no hay tecla Esc).
+ *  No deja pasar el toque a la escena (si no, además de saltar, adelantaría un cuadro). */
+export function botonSaltar(scene: Phaser.Scene, alSaltar: () => void, x = W - 70, y = H - 28): Phaser.GameObjects.Container {
+  const tx = scene.add.text(0, 0, 'Saltar  ▸▸', { fontFamily: FUENTE, fontSize: '14px', fontStyle: '800', color: '#e8f6ff' }).setOrigin(0.5);
+  const w = tx.width + 30, h = 34;
+  const g = scene.add.graphics().fillStyle(0x040914, 0.7).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2).lineStyle(2, 0x9fb3d1, 0.6).strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+  const c = scene.add.container(x, y, [g, tx]).setDepth(9700).setScrollFactor(0).setAlpha(0.8);
+  c.setSize(w + 16, h + 16).setInteractive({ useHandCursor: true });   // zona un poco más grande que el dibujo: fácil de tocar
+  c.on('pointerover', () => c.setAlpha(1));
+  c.on('pointerout', () => c.setAlpha(0.8));
+  c.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); Sonido.click(); alSaltar(); });
+  return c;
+}
+
+/** Fija a la pantalla un panel y todo su contenido (botones y contenedores anidados incluidos).
+ *  Con la cámara siguiendo al jugador, si solo se fija el contenedor, los toques de sus botones
+ *  se calculan en el mundo y no responden donde se ven. Llamarlo DESPUÉS de agregar los hijos. */
+export function fijarEnPantalla<T extends Phaser.GameObjects.GameObject>(o: T): T {
+  const x = o as unknown as { setScrollFactor?: (v: number) => void; list?: Phaser.GameObjects.GameObject[] };
+  x.setScrollFactor?.(0);
+  x.list?.forEach(h => fijarEnPantalla(h));
+  return o;
 }

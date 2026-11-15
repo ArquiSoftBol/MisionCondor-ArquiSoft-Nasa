@@ -5,6 +5,7 @@
 // Ajustes y Logros son paneles completos (interruptores y selectores, no botones a ciegas). Borrar la partida pide
 // confirmación.
 import Phaser from 'phaser';
+import { esTactil } from '../ui/palanca';
 import { t, cambiarIdioma, idioma } from '../core/idioma';
 import { selectorIdioma } from '../ui/selectorIdioma';
 import { W, H, FUENTE, FUENTE_PIXEL, CSS } from '../config';
@@ -264,7 +265,7 @@ export class Titulo extends Phaser.Scene {
   }
 
   private pie(): void {
-    this.add.text(MX, H - 26, t('↑ ↓ elegir · Enter aceptar · F pantalla completa'), { fontFamily: FUENTE_PIXEL, fontSize: '8px', color: '#7f93b5' }).setOrigin(0, 0.5).setDepth(40);
+    this.add.text(MX, H - 26, t(esTactil() ? 'Toca una opción para empezar' : '↑ ↓ elegir · Enter aceptar · F pantalla completa'), { fontFamily: FUENTE_PIXEL, fontSize: '8px', color: '#7f93b5' }).setOrigin(0, 0.5).setDepth(40);
     insigniaSpaceApps(this, W - 236, H - 30, 34).setDepth(40);
     insigniaArquisoft(this, W - 80, H - 30, 22).setDepth(40);
   }

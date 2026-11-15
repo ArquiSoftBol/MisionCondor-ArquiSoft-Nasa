@@ -9,7 +9,7 @@ import { Sonido } from '../core/audio';
 import { t } from '../core/idioma';
 import { Red } from '../core/red';
 import { DECORADOS, piso } from '../ui/decorado';
-import { aviso, boton, cintillo, panel, type Cintillo } from '../ui/boton';
+import { aviso, boton, cintillo, panel, fijarEnPantalla, type Cintillo } from '../ui/boton';
 import { destello, flotante } from '../ui/taller';
 import { colorear } from '../ui/cine';
 import { ROLES, type VistaSala } from './MultiLobby';
@@ -272,6 +272,8 @@ export class Coop extends Phaser.Scene {
   // ───────── mesa del ingeniero ─────────
   private abrirMesa(): void {
     const e = this.estado!;
+    if (this.seleccion && !e.bandeja.includes(this.seleccion)) this.seleccion = null;
+    if (!this.seleccion) this.seleccion = e.bandeja.find(id => this.veredicto(id).tipo === 'ahora') ?? null;
     this.mesaPanel?.destroy();
     const c = this.add.container(0, 0).setScrollFactor(0).setDepth(95000);
     this.mesaPanel = c;
@@ -281,8 +283,11 @@ export class Coop extends Phaser.Scene {
     c.add(this.add.text(70, 70, t('PIEZAS RECIBIDAS'), { fontFamily: FUENTE_PIXEL, fontSize: '9px', color: '#ffb33f' }));
     if (!e.bandeja.length) c.add(this.add.text(70, 100, t('Todavía no llegó nada.\nPídele piezas al Recolector →'), { fontFamily: FUENTE, fontSize: '13px', fontStyle: '700', color: '#8a9cbc', lineSpacing: 4 }));
     e.bandeja.forEach((id, i) => {
-      const d = this.def(id), x = 112 + (i % 3) * 96, y = 140 + Math.floor(i / 3) * 112, sel = this.seleccion === id;
-      const g = this.add.graphics().fillStyle(sel ? 0x0e2a3e : 0x0b1222, 1).fillRoundedRect(x - 44, y - 50, 88, 104, 10).lineStyle(2, sel ? 0xffe14d : 0x3a4d74, 1).strokeRoundedRect(x - 44, y - 50, 88, 104, 10);
+      const d = this.def(id), x = 112 + (i % 3) * 96, y = 136 + Math.floor(i / 3) * 128, sel = this.seleccion === id;
+      const v = this.veredicto(id), borde = sel ? 0xffe14d : v.tipo === 'ahora' ? 0x3cff6a : v.tipo === 'despues' ? 0x3ff3ff : 0xff4a3d;
+      const g = this.add.graphics().fillStyle(sel ? 0x0e2a3e : 0x0b1222, 1).fillRoundedRect(x - 44, y - 50, 88, 104, 10).lineStyle(sel ? 3 : 2, borde, 1).strokeRoundedRect(x - 44, y - 50, 88, 104, 10);
+      const etq = this.add.text(x, y + 66, t(v.tipo === 'ahora' ? '✔ VA AHORA' : v.tipo === 'despues' ? '… DESPUÉS' : '✖ NO VA'), { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: v.tipo === 'ahora' ? '#7dff9c' : v.tipo === 'despues' ? '#9fe8ff' : '#ff8a7a' }).setOrigin(0.5);
+      c.add(etq);
       const a = new Actor(this, x, y + 12, d.sprite, { escala: d.kg >= 500 ? 0.8 : 1.1, dir: 1 }).pausar();
       const n = this.add.text(x, y + 22, t(d.nombre), { fontFamily: FUENTE, fontSize: '10px', fontStyle: '800', color: '#ffffff', align: 'center', wordWrap: { width: 82 } }).setOrigin(0.5, 0);
       const kg = this.add.text(x, y - 44, `${d.kg} kg`, { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: '#ffe14d' }).setOrigin(0.5, 0);
@@ -295,7 +300,9 @@ export class Coop extends Phaser.Scene {
     const filas = r.tipo === 'sistemas' ? r.ranuras!.map(k => [t(SISTEMA_NOMBRE[k]), e.montado.find(m => m.sistema === k)?.id] as const) : r.orden!.map((n, i) => [`${i + 1}. ${t(n)}`, e.montado[i]?.id] as const);
     filas.forEach(([nombre, id], i) => {
       const y = 100 + i * 34;
-      c.add(this.add.text(x0, y, `${id ? '✔' : '□'}  ${nombre}`, { fontFamily: FUENTE, fontSize: '14px', fontStyle: '800', color: id ? '#7dff9c' : '#ffffff' }));
+      const ahora = !id && (r.tipo === 'orden' ? i === e.montado.length : true);
+      c.add(this.add.text(x0, y, `${id ? '✔' : '□'}  ${nombre}`, { fontFamily: FUENTE, fontSize: '14px', fontStyle: '800', color: id ? '#7dff9c' : ahora && r.tipo === 'orden' ? '#ffe14d' : '#ffffff' }));
+      if (ahora && r.tipo === 'orden') c.add(this.add.text(x0 + 250, y + 2, t('◀ AHORA'), { fontFamily: FUENTE_PIXEL, fontSize: '8px', color: '#ffe14d' }).setOrigin(1, 0));
       if (id) c.add(this.add.text(x0 + 250, y + 2, t(this.def(id).nombre), { fontFamily: FUENTE, fontSize: '11px', fontStyle: '700', color: '#9fb3d1' }).setOrigin(1, 0));
     });
     if (r.masaMax) {
@@ -310,7 +317,8 @@ export class Coop extends Phaser.Scene {
     this.esc.items.forEach((d, i) => {
       const est = e.items.find(it => it.id === d.id)?.estado ?? 'libre', y = 96 + i * 30, pedido = e.pedido === d.id;
       const disponible = est === 'libre';
-      const tx = this.add.text(x1, y, `${pedido ? '★ ' : ''}${t(d.nombre)}`, { fontFamily: FUENTE, fontSize: '12px', fontStyle: '800', color: !disponible ? '#4a5a7a' : pedido ? '#ffe14d' : '#ffffff' });
+      const sugerida = disponible && !pedido && this.sugerenciaPedido() === d.id;
+      const tx = this.add.text(x1, y, `${pedido ? '★ ' : ''}${t(d.nombre)}${sugerida ? '  ◀ ' + t('pídela') : ''}`, { fontFamily: FUENTE, fontSize: '12px', fontStyle: '800', color: !disponible ? '#4a5a7a' : pedido ? '#ffe14d' : sugerida ? '#7dff9c' : '#ffffff' });
       const zona = this.add.text(x1, y + 14, t(d.zona), { fontFamily: FUENTE, fontSize: '9px', fontStyle: '700', color: '#7f93b5' });
       c.add([tx, zona]);
       if (disponible) {
@@ -322,14 +330,20 @@ export class Coop extends Phaser.Scene {
     if (this.seleccion && e.bandeja.includes(this.seleccion)) {
       const d = this.def(this.seleccion);
       c.add(this.add.text(400, 330, `${t('Montar')}: ${t(d.nombre)}`, { fontFamily: FUENTE, fontSize: '15px', fontStyle: '800', color: '#ffe14d' }));
-      c.add(this.add.text(400, 352, t('Detén la aguja en la zona verde para calibrar.'), { fontFamily: FUENTE, fontSize: '11px', fontStyle: '700', color: '#c8d6ec' }));
-      if (!this.calib) { const z0 = 0.2 + Math.random() * 0.55; this.calib = { aguja: 0, dir: 1, zona: [z0, z0 + 0.16], g: this.add.graphics() }; }
+      const v = this.veredicto(this.seleccion);
+      c.add(this.add.text(400, 352, v.tipo === 'ahora' ? t('Va ahora. Detén la aguja en la zona verde y pulsa MONTAR.') : `${t(v.tipo === 'despues' ? 'Todavía no:' : 'No conviene:')} ${t(v.msg)}`, { fontFamily: FUENTE, fontSize: '11px', fontStyle: '700', color: v.tipo === 'ahora' ? '#7dff9c' : v.tipo === 'despues' ? '#9fe8ff' : '#ff8a7a', wordWrap: { width: 420 } }));
+      if (!this.calib) { const z0 = 0.18 + Math.random() * 0.52; this.calib = { aguja: 0, dir: 1, zona: [z0, z0 + 0.22], g: this.add.graphics() }; }
       else this.calib.g = this.add.graphics();
       c.add(this.calib.g);
       c.add(boton(this, 470, 438, 'MONTAR', () => this.montar(), { ancho: 160, alto: 44, variante: 'exito', icono: 'ico_engranaje', retardo: 0 }));
       c.add(boton(this, 640, 438, 'Devolver', () => { Red.enviar({ t: 'descartar', item: this.seleccion }); this.seleccion = null; this.calib = undefined; }, { ancho: 150, alto: 44, variante: 'peligro', retardo: 0 }));
-    } else this.calib = undefined;
+    } else {
+      this.calib = undefined;
+      const consejo = e.bandeja.length ? 'Toca una pieza de la izquierda para montarla.' : 'Pide la pieza marcada ◀ y espera a que el Recolector la traiga.';
+      c.add(this.add.text(400, 340, t(consejo), { fontFamily: FUENTE, fontSize: '13px', fontStyle: '700', color: '#c8d6ec', wordWrap: { width: 300 } }));
+    }
     c.add(boton(this, W / 2 + 330, 494, 'Cerrar', () => this.cerrarMesa(), { ancho: 140, alto: 40, tam: 14, variante: 'neutro', retardo: 0 }));
+    fijarEnPantalla(c);
   }
 
   // ───────── salir a mitad de partida ─────────
@@ -344,6 +358,7 @@ export class Coop extends Phaser.Scene {
       const x = botones.length === 1 ? W / 2 : W / 2 + (i === 0 ? -125 : 125);
       c.add(boton(this, x, H / 2 + 56, txt, fn, { ancho: 220, alto: 46, variante, icono: variante === 'peligro' ? '✕' : variante === 'exito' ? '↺' : '‹', retardo: 0 }));
     });
+    fijarEnPantalla(c);
     this.dialogo = c;
   }
 
@@ -380,12 +395,46 @@ export class Coop extends Phaser.Scene {
     ]);
   }
 
+  /** ¿Esta pieza se puede montar ya? (misma regla que el servidor, para ayudar antes de equivocarse) */
+  private veredicto(id: string): { tipo: 'ahora' | 'despues' | 'no'; msg: string } {
+    const d = this.def(id), e = this.estado!, r = this.esc.receta;
+    if (d.rechazo) return { tipo: 'no', msg: d.rechazo };
+    if (r.tipo === 'sistemas') {
+      if (!d.sistema) return { tipo: 'no', msg: 'Eso no es un sistema del vehículo.' };
+      if (e.montado.some(m => m.sistema === d.sistema)) return { tipo: 'no', msg: t('Ya hay una pieza de {s}.', { s: t(SISTEMA_NOMBRE[d.sistema] ?? d.sistema) }) };
+      if (r.masaMax && e.masa + d.kg > r.masaMax) return { tipo: 'no', msg: t('Con {k} kg se pasa del límite de {m} kg.', { k: d.kg, m: r.masaMax }) };
+      return { tipo: 'ahora', msg: '' };
+    }
+    const sigue = r.orden![e.montado.length];
+    if (d.nombre === sigue) return { tipo: 'ahora', msg: '' };
+    if (r.orden!.slice(e.montado.length).includes(d.nombre)) return { tipo: 'despues', msg: t('primero va: {p}.', { p: t(sigue) }) };
+    return { tipo: 'no', msg: 'Esa pieza no va en el cohete.' };
+  }
+
+  /** La pieza que conviene pedir: la que falta y nadie trae todavía. */
+  private sugerenciaPedido(): string | null {
+    const e = this.estado!, r = this.esc.receta;
+    const enCamino = (id: string) => e.carga.includes(id) || e.bandeja.includes(id) || e.montado.some(m => m.id === id);
+    const libres = this.esc.items.filter(d => !d.rechazo && !enCamino(d.id) && e.items.find(i => i.id === d.id)?.estado === 'libre');
+    if (r.tipo === 'sistemas') {
+      const falta = r.ranuras!.filter(k => !e.montado.some(m => m.sistema === k) && !e.bandeja.concat(e.carga).some(id => this.def(id).sistema === k && !this.def(id).rechazo));
+      return libres.find(d => d.sistema && falta.includes(d.sistema))?.id ?? null;
+    }
+    const pendientes = r.orden!.slice(e.montado.length);
+    for (const n of pendientes) {
+      const yaVienen = e.bandeja.concat(e.carga).filter(id => this.def(id).nombre === n).length;
+      const necesarias = pendientes.filter(x => x === n).length;
+      if (yaVienen < necesarias) { const d = libres.find(x => x.nombre === n); if (d) return d.id; }
+    }
+    return null;
+  }
+
   private cerrarMesa(): void { this.mesaPanel?.destroy(); this.mesaPanel = undefined; this.calib = undefined; }
 
   private montar(): void {
     if (!this.calib || !this.seleccion) return;
     const { aguja, zona } = this.calib;
-    const calibrado = aguja >= zona[0] && aguja <= zona[1];
+    const calibrado = aguja >= zona[0] - 0.03 && aguja <= zona[1] + 0.03;   // un poco de margen por la demora del toque
     Red.enviar({ t: 'montar', item: this.seleccion, calibrado });
     this.seleccion = null; this.calib = undefined;
   }
@@ -393,7 +442,7 @@ export class Coop extends Phaser.Scene {
   private pintarCalibracion(dt: number): void {
     const c = this.calib;
     if (!c || !c.g.active) return;
-    c.aguja += c.dir * dt * 0.9;
+    c.aguja += c.dir * dt * 0.55;   // lenta: se puede acertar también con el dedo
     if (c.aguja > 1) { c.aguja = 1; c.dir = -1; } else if (c.aguja < 0) { c.aguja = 0; c.dir = 1; }
     const x = 400, y = 384, w = 330;
     c.g.clear().fillStyle(0x0b1222, 1).fillRoundedRect(x, y, w, 18, 6).fillStyle(0x3cff6a, 0.85).fillRect(x + w * c.zona[0], y, w * (c.zona[1] - c.zona[0]), 18);
@@ -555,5 +604,6 @@ export class Coop extends Phaser.Scene {
     if (cierre) c.add(this.add.text(W / 2, 372, t(cierre), { fontFamily: FUENTE, fontSize: '13px', fontStyle: 'italic 700', color: tarde ? '#ffc58a' : '#ffe9b0', align: 'center', wordWrap: { width: 580 } }).setOrigin(0.5));
     c.add(boton(this, W / 2 - 130, 420, 'Otra partida', () => Red.enviar({ t: 'otra' }), { ancho: 220, alto: 44, variante: 'exito', icono: '↺', retardo: 0 }));
     c.add(boton(this, W / 2 + 130, 420, 'Salir', () => { Red.salirDeSala(); this.scene.start('Titulo'); }, { ancho: 220, alto: 44, variante: 'neutro', retardo: 0 }));
+    fijarEnPantalla(c);
   }
 }

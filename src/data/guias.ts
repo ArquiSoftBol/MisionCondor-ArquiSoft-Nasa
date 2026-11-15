@@ -90,7 +90,7 @@ export const GUIAS: Record<string, Guia> = {
     pasos: [
       ['ico_ruta', 'Sigue la flecha: te lleva al objetivo que toca.'],
       ['ico_taladro', 'Perfora la grieta con USAR; si la broca se calienta, suéltalo un momento.'],
-      ['ico_escanear', 'Escanea con Q para encontrar el hielo escondido.'],
+      ['ico_escanear', 'Pulsa ESCANEAR (o Q) para encontrar el hielo escondido.'],
       ['ico_bateria', 'Vuelve a la nave para cargar batería; evita los géiseres.'],
     ],
     controles: 'Flechas / WASD o dedo: manejar  ·  E / Espacio: usar  ·  Q: escanear  ·  Esc: pausa',

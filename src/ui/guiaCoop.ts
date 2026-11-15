@@ -5,7 +5,7 @@ import { W, H, FUENTE, FUENTE_PIXEL } from '../config';
 import { t } from '../core/idioma';
 import { GUIAS_COOP } from '../data/guias';
 import { contenidoGuia, chipTema } from './guia';
-import { boton, panel } from './boton';
+import { boton, panel, fijarEnPantalla } from './boton';
 
 const COLOR = { ingeniero: 0x3ff3ff, recolector: 0xffb33f } as const;
 const NOMBRE = { ingeniero: 'Ingeniero', recolector: 'Recolector' } as const;
@@ -28,6 +28,7 @@ export function guiaCoop(s: Phaser.Scene, escenario: string, rol: Rol, o: { boto
   c.add(s.add.text(W / 2, 466, t('★ Menos tiempo y menos errores = más estrellas. Hablen entre ustedes: solo juntos se termina.'), { fontFamily: FUENTE, fontSize: '12px', fontStyle: '700', color: '#ffe14d', align: 'center', wordWrap: { width: 780 } }).setOrigin(0.5));
   const cerrar = () => { c.destroy(); o.alCerrar(); };
   c.add(boton(s, W / 2, 504, o.boton ?? '¡A jugar!', cerrar, { ancho: 230, alto: 40, tam: 15, variante: 'exito', icono: '➜', retardo: 0 }));
+  fijarEnPantalla(c);
   c.setAlpha(0);
   s.tweens.add({ targets: c, alpha: 1, duration: 220 });
   return c;

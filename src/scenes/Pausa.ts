@@ -1,5 +1,6 @@
 // Menú de pausa: se abre encima de la misión (que queda congelada detrás). Continuar · Reiniciar misión · Volver al inicio.
 import Phaser from 'phaser';
+import { esTactil } from '../ui/palanca';
 import { W, H, FUENTE, FUENTE_PIXEL } from '../config';
 import { boton, panel } from '../ui/boton';
 import { icono } from '../ui/iconos';
@@ -75,10 +76,11 @@ export function instalarPausa(scene: Phaser.Scene): void {
     scene.scene.pause();
     scene.scene.launch('Pausa', { escena: scene.scene.key });
   };
+  const TOQUE = esTactil() ? 54 : 44;   // en celular, zona de toque más grande que el dibujo
   const b = scene.add.container(W - 34, 30).setDepth(9800).setScrollFactor(0, 0, true);
   const g = scene.add.graphics().fillStyle(0x040914, 0.8).fillRoundedRect(-20, -20, 40, 40, 10).lineStyle(2, 0x3ff3ff, 0.8).strokeRoundedRect(-20, -20, 40, 40, 10);
   g.fillStyle(0xffffff).fillRect(-7, -9, 5, 18).fillRect(2, -9, 5, 18);
-  b.add(g).setSize(44, 44).setInteractive({ useHandCursor: true });
+  b.add(g).setSize(TOQUE, TOQUE).setInteractive({ useHandCursor: true });
   b.on('pointerover', () => scene.tweens.add({ targets: b, scale: 1.12, duration: 100 }));
   b.on('pointerout', () => scene.tweens.add({ targets: b, scale: 1, duration: 100 }));
   b.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); abrir(); });
@@ -96,7 +98,7 @@ export function instalarPausa(scene: Phaser.Scene): void {
   const q = scene.add.container(W - 84, 30).setDepth(9800).setScrollFactor(0, 0, true);
   const gq = scene.add.graphics().fillStyle(0x040914, 0.8).fillRoundedRect(-20, -20, 40, 40, 10).lineStyle(2, 0xffe14d, 0.85).strokeRoundedRect(-20, -20, 40, 40, 10);
   const tq = scene.add.text(0, 1, '?', { fontFamily: FUENTE, fontSize: '22px', fontStyle: '800', color: '#ffe14d' }).setOrigin(0.5);
-  q.add([gq, tq]).setSize(44, 44).setInteractive({ useHandCursor: true });
+  q.add([gq, tq]).setSize(TOQUE, TOQUE).setInteractive({ useHandCursor: true });
   q.on('pointerover', () => scene.tweens.add({ targets: q, scale: 1.12, duration: 100 }));
   q.on('pointerout', () => scene.tweens.add({ targets: q, scale: 1, duration: 100 }));
   q.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, ev: Phaser.Types.Input.EventData) => { ev.stopPropagation(); verGuia(); });

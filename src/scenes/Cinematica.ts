@@ -17,7 +17,7 @@ import { siguiente } from '../core/flujo';
 import { Sonido } from '../core/audio';
 import { Musica, MOMENTOS } from '../core/musica';
 import { degradado, estrellas, nebulosa } from '../ui/fondo';
-import { panel } from '../ui/boton';
+import { panel, botonSaltar } from '../ui/boton';
 import { confeti } from '../ui/tarjeta';
 import { vineta, fugaces, luna, horizonte, polvo, escarcha, chispas, hangar } from '../ui/ambiente';
 import { DECORADOS, piso, cordillera, utileria, nubes } from '../ui/decorado';
@@ -1067,6 +1067,7 @@ export class Cinematica extends Phaser.Scene {
     this.telon = new Telon(this, 60);
 
     this.input.keyboard?.on('keydown-ESC', () => this.terminar());
+    botonSaltar(this, () => this.terminar());   // en celular no hay Esc
     this.input.keyboard?.on('keydown-SPACE', () => this.adelantar());
     this.input.keyboard?.on('keydown-ENTER', () => this.adelantar());
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => { Sonido.despertar(); if (!this.tocar(p)) this.adelantar(); });
