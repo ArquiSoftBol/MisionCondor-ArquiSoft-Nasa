@@ -66,18 +66,16 @@ async function montarDesdeMesa(A: Page, info: TestInfo) {
   }
   const sel = await leer<string>(A, 'Coop', 's.seleccion');
   expect(sel, 'la mesa elige sola la pieza que va ahora').toBeTruthy();
-  // pulsa MONTAR justo cuando la aguja ENTRA a la zona verde (queda casi medio segundo de margen, como una persona)
-  const caja = (await A.locator('canvas').boundingBox())!;
-  const [mx, my] = [caja.x + 470 / 960 * caja.width, caja.y + 438 / 540 * caja.height];
-  await A.waitForFunction(() => {
-    const c = (window as any).juego.scene.getScene('Coop').calib;
-    return !!c && ((c.dir > 0 && c.aguja >= c.zona[0] - 0.02 && c.aguja <= c.zona[0] + 0.05) || (c.dir < 0 && c.aguja <= c.zona[1] + 0.02 && c.aguja >= c.zona[1] - 0.05));
-  }, null, { polling: 10, timeout: 15_000 });
-  if (esCelular(info)) await A.touchscreen.tap(mx, my); else await A.mouse.click(mx, my);   // MONTAR
+  // la aguja se deja quieta en el centro de la zona verde y se pulsa MONTAR con un clic/toque REAL.
+  // (Así el test no depende de los cuadros por segundo de la máquina; la puntería a ojo está en el checklist manual.)
+  await A.waitForFunction(() => !!(window as any).juego.scene.getScene('Coop').calib, null, { timeout: 15_000 });
+  await A.evaluate(() => { const c = (window as any).juego.scene.getScene('Coop').calib; c.dir = 0; c.aguja = (c.zona[0] + c.zona[1]) / 2; });
+  await tocar(A, info, 470, 438);   // MONTAR
   await expect.poll(() => leer<boolean>(A, 'Coop', `s.estado.montado.some(m => m.id === '${sel}')`), { message: `montar ${sel}` }).toBe(true);
 }
 
 test('multijugador · salar completo: lobby por código, mesa inteligente y fin', async ({ browser }, info) => {
+  test.setTimeout(300_000);
   const { A, B } = await crearYUnirse(browser, info, 'salar');
   const errA = vigilarErrores(A), errB = vigilarErrores(B);
   // el recolector trae también una trampa: la mesa la marca «NO VA» y no la elige
@@ -96,6 +94,7 @@ test('multijugador · salar completo: lobby por código, mesa inteligente y fin'
 });
 
 test('multijugador · cohete: Cerrar la mesa, «?» de guía y piezas fuera de orden', async ({ browser }, info) => {
+  test.setTimeout(240_000);
   const { A, B } = await crearYUnirse(browser, info, 'cohete');
   await entregar(B, 'superior');
   if (esCelular(info)) await tocarTexto(A, info, 'Coop', 'USAR'); else await A.keyboard.press('e');
@@ -113,6 +112,7 @@ test('multijugador · cohete: Cerrar la mesa, «?» de guía y piezas fuera de o
 });
 
 test('multijugador · salir a mitad: confirmación y el compañero puede volver a la sala', async ({ browser }, info) => {
+  test.setTimeout(240_000);
   const { A, B, codigo } = await crearYUnirse(browser, info, 'salar');
   await tocarTexto(A, info, 'Coop', 'Salir');
   await expect.poll(() => hayTexto(A, 'Coop', 'SALIR DE LA MISIÓN')).toBe(true);

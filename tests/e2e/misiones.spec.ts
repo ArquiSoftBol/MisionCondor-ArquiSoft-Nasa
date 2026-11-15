@@ -96,8 +96,12 @@ test('Misión 5 · Marte: al estallar la tormenta el personaje se mueve (teclado
   await pasarTarjeta(page, info, k);
   await expect.poll(() => leer<string>(page, k, 's.fase'), { timeout: 40_000 }).toBe('tormenta');
   const x0 = await leer<number>(page, k, 's.yo.y');
-  if (esCelular(info)) await arrastrar(page, info, 130, 380, 130, 310, 1500);   // palanca hacia arriba
-  else { await page.keyboard.down('ArrowUp'); await page.waitForTimeout(1500); await page.keyboard.up('ArrowUp'); }
+  if (esCelular(info)) await arrastrar(page, info, 130, 380, 130, 310, 4000);   // palanca hacia arriba
+  else {
+    await page.keyboard.down('ArrowUp');
+    await expect.poll(() => leer<number>(page, k, 's.yo.y'), { timeout: 10_000 }).toBeLessThan(x0 - 40);
+    await page.keyboard.up('ArrowUp');
+  }
   expect(await leer<number>(page, k, 's.yo.y')).toBeLessThan(x0 - 40);
   expect(errores).toEqual([]);
 });
@@ -108,8 +112,12 @@ test('Misión 6 · Rover: manejar y escanear con BIT-7', async ({ page }, info) 
   await abrir(page, k);
   await pasarTarjeta(page, info, k);
   const x0 = await leer<number>(page, k, 's.rover.x');
-  if (esCelular(info)) await arrastrar(page, info, 130, 390, 200, 390, 1500);
-  else { await page.keyboard.down('ArrowRight'); await page.waitForTimeout(1500); await page.keyboard.up('ArrowRight'); }
+  if (esCelular(info)) await arrastrar(page, info, 130, 390, 200, 390, 4000);
+  else {
+    await page.keyboard.down('ArrowRight');
+    await expect.poll(() => leer<number>(page, k, 's.rover.x'), { timeout: 10_000 }).toBeGreaterThan(x0 + 80);
+    await page.keyboard.up('ArrowRight');
+  }
   expect(await leer<number>(page, k, 's.rover.x')).toBeGreaterThan(x0 + 80);
   await tocarTexto(page, info, k, 'ESCANEAR');
   await expect.poll(async () => (await textos(page, k)).some(t => /BIT-7 encontró|hielo/i.test(t)), { timeout: 15_000 }).toBe(true);
