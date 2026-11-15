@@ -1,0 +1,10 @@
+Logo oficial de NASA Space Apps Challenge
+=========================================
+Pon aquí el logo oficial con este nombre exacto:  space-apps.png
+(PNG con fondo transparente, versión clara para fondo oscuro; idealmente unos 600 px de ancho).
+
+Se usa en la intro, en el menú principal y en los créditos. Si el archivo no está, el juego muestra
+una insignia de texto «NASA SPACE APPS CHALLENGE 2026» en su lugar.
+
+El logo se obtiene del kit de marca para participantes de Space Apps (o del equipo organizador local).
+Respeta sus normas de uso de marca.

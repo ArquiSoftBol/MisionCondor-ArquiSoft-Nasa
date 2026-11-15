@@ -1,0 +1,5 @@
+Revisión de las hojas · 14/11/2026, 23:09:57
+26 moldes · 0 con avisos · 0 errores
+
+Math.random sin semilla en:
+  - taller.js:372

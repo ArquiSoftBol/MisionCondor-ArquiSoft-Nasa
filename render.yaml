@@ -1,0 +1,17 @@
+# Render Blueprint (https://render.com → New → Blueprint → elegir este repo)
+# Un solo servicio: juego + multijugador. Render da HTTPS (wss://) automáticamente.
+services:
+  - type: web
+    name: mision-condor
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter            # «free» también funciona, pero se duerme sin visitas y SIN disco: el ranking se borra en cada redeploy
+    healthCheckPath: /api/salud
+    autoDeploy: true         # cada push a la rama principal vuelve a publicar
+    envVars:
+      - key: CONDOR_DATOS
+        value: /datos
+    disk:                    # disco persistente para la base SQLite (requiere plan pago; bórralo si usas «free»)
+      name: condor-datos
+      mountPath: /datos
+      sizeGB: 1

@@ -1,0 +1,35 @@
+# Fly.io  (fly launch --no-deploy  →  fly volumes create condor_datos --size 1  →  fly deploy)
+# Cambia «app» por un nombre libre.
+app = "mision-condor"
+primary_region = "scl"          # Santiago: la región más cercana a Bolivia
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  CONDOR_DATOS = "/datos"
+
+[mounts]
+  source = "condor_datos"
+  destination = "/datos"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"   # se apaga sin visitas (las salas en memoria se pierden; el ranking queda en el volumen)
+  auto_start_machines = true
+  min_machines_running = 0      # pon 1 el día de la presentación para que no tarde en despertar
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/salud"
+    timeout = "4s"
+
+# IMPORTANTE: una sola máquina. Las salas viven en la memoria del proceso; con 2 máquinas,
+# dos jugadores podrían caer en procesos distintos y no encontrarse.
+[[vm]]
+  memory = "256mb"
+  cpus = 1

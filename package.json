@@ -1,0 +1,29 @@
+{
+  "name": "mision-condor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Misión Cóndor — juego web NASA Space Apps 2026 (ARQUISOFT)",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "atlas": "node herramientas/atlas.mjs",
+    "servidor": "node herramientas/servir.mjs",
+    "empaquetar": "node herramientas/atlas.mjs && npm run build && node herramientas/empaquetar.mjs",
+    "build:servidor": "node herramientas/atlas.mjs && npm run build && node -e \"require('fs').copyFileSync('herramientas/servir.mjs','dist/servir.mjs')\"",
+    "start": "node dist/servir.mjs"
+  },
+  "dependencies": {
+    "@fontsource/open-sans": "^5.3.0",
+    "@fontsource/press-start-2p": "^5.3.0",
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.1.12"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

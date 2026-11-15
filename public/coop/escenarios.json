@@ -1,0 +1,74 @@
+{
+  "nota": "Escenarios del modo multijugador (2 jugadores: Ingeniero + Recolector). Los lee el cliente y el servidor (herramientas/servir.mjs). Coordenadas en píxeles del mundo.",
+  "salar": {
+    "nombre": "Salar de Uyuni · El módulo para Europa",
+    "descripcion": "El Recolector recorre la Ciudadela buscando las piezas; el Ingeniero arma el módulo en la mesa del hangar: energía, control, comunicación y propulsión, sin pasar de 900 kg.",
+    "tiempo": 420,
+    "cierre": "El módulo respira: ya puede cuidar una vida que no es de este planeta. Mañana, la torre.",
+    "mapa": { "ancho": 2600, "alto": 1700, "suelo": "suelo_sal", "hora": "noche" },
+    "inicio": { "ingeniero": [700, 1030], "recolector": [820, 1060] },
+    "mesa": { "x": 640, "y": 990, "r": 90, "sprite": "mesa_holo" },
+    "entrega": { "x": 820, "y": 990, "r": 100 },
+    "decorados": [
+      { "id": "hangar_ensamblaje", "x": 720, "y": 880, "escala": 2.3, "solido": true },
+      { "id": "modulo_habitacional", "x": 300, "y": 420, "escala": 2.1, "solido": true },
+      { "id": "invernadero", "x": 1320, "y": 360, "escala": 2.0, "solido": true },
+      { "id": "laboratorio", "x": 1940, "y": 520, "escala": 2.0, "solido": true },
+      { "id": "antena_espacio_profundo", "x": 2360, "y": 300, "escala": 1.9, "solido": true },
+      { "id": "centro_control", "x": 1240, "y": 900, "escala": 2.0, "solido": true },
+      { "id": "oficina_presupuesto", "x": 1760, "y": 900, "escala": 2.0, "solido": true },
+      { "id": "granja_solar", "x": 2220, "y": 1150, "escala": 2.0, "solido": true },
+      { "id": "deposito_combustible", "x": 1620, "y": 1380, "escala": 2.0, "solido": true },
+      { "id": "patio_pruebas", "x": 1000, "y": 1420, "escala": 1.9, "solido": true },
+      { "id": "torre_lanzamiento", "x": 380, "y": 1380, "escala": 2.4, "solido": true },
+      { "id": "pasarela_tubo", "x": 980, "y": 900, "escala": 2.0, "solido": false },
+      { "id": "cactus_gigante", "x": 140, "y": 900, "escala": 2.2, "solido": true },
+      { "id": "cactus_gigante", "x": 2480, "y": 1560, "escala": 2.0, "solido": true }
+    ],
+    "items": [
+      { "id": "solar", "sprite": "panel_desplegable", "nombre": "Panel solar", "kg": 80, "sistema": "energia", "x": 2120, "y": 1290, "zona": "Granja solar",
+        "rechazo": "En Europa el Sol brilla 25 veces menos: el panel solar no alcanza. Pide el RTG del laboratorio." },
+      { "id": "rtg", "sprite": "rtg_nuclear", "nombre": "Generador RTG", "kg": 150, "sistema": "energia", "x": 2030, "y": 660, "zona": "Laboratorio" },
+      { "id": "control", "sprite": "panel_control", "nombre": "Panel de control", "kg": 120, "sistema": "control", "x": 1300, "y": 1050, "zona": "Centro de control" },
+      { "id": "antena", "sprite": "antena_portatil", "nombre": "Antena", "kg": 60, "sistema": "comunicacion", "x": 2240, "y": 440, "zona": "Antena de espacio profundo" },
+      { "id": "tanque", "sprite": "tanque_criogenico", "nombre": "Tanque de combustible", "kg": 500, "sistema": "propulsion", "x": 1520, "y": 1500, "zona": "Depósito de combustible" },
+      { "id": "taza", "sprite": "taza", "nombre": "Taza de café", "kg": 1, "sistema": null, "x": 420, "y": 560, "zona": "Módulo habitacional",
+        "rechazo": "Una taza no es un sistema del vehículo… aunque el café ayuda a calcular." },
+      { "id": "planta", "sprite": "planta", "nombre": "Planta", "kg": 3, "sistema": null, "x": 1440, "y": 480, "zona": "Invernadero",
+        "rechazo": "La planta se queda en el Invernadero: no es un sistema del vehículo." }
+    ],
+    "receta": { "tipo": "sistemas", "ranuras": ["energia", "control", "comunicacion", "propulsion"], "masaMax": 900 }
+  },
+  "cohete": {
+    "nombre": "Torre de lanzamiento · El cohete",
+    "descripcion": "El Recolector trae las etapas desde toda la Ciudadela; el Ingeniero las monta en orden en la torre: etapa central, los dos propulsores y la etapa superior.",
+    "tiempo": 360,
+    "cierre": "El cohete está de pie. Quien despegue no viajará en soledad: lleva el trabajo de toda la Ciudadela.",
+    "mapa": { "ancho": 2600, "alto": 1700, "suelo": "suelo_sal", "hora": "dia" },
+    "inicio": { "ingeniero": [560, 1300], "recolector": [700, 1320] },
+    "mesa": { "x": 560, "y": 1250, "r": 90, "sprite": "mesa_holo" },
+    "entrega": { "x": 720, "y": 1250, "r": 100 },
+    "decorados": [
+      { "id": "torre_lanzamiento", "x": 380, "y": 1240, "escala": 2.6, "solido": true },
+      { "id": "hangar_ensamblaje", "x": 760, "y": 600, "escala": 2.3, "solido": true },
+      { "id": "modulo_habitacional", "x": 300, "y": 380, "escala": 2.1, "solido": true },
+      { "id": "invernadero", "x": 1320, "y": 360, "escala": 2.0, "solido": true },
+      { "id": "laboratorio", "x": 1940, "y": 520, "escala": 2.0, "solido": true },
+      { "id": "centro_control", "x": 1240, "y": 900, "escala": 2.0, "solido": true },
+      { "id": "granja_solar", "x": 2220, "y": 1150, "escala": 2.0, "solido": true },
+      { "id": "deposito_combustible", "x": 1620, "y": 1380, "escala": 2.0, "solido": true },
+      { "id": "patio_pruebas", "x": 1000, "y": 1420, "escala": 1.9, "solido": true },
+      { "id": "antena_espacio_profundo", "x": 2360, "y": 300, "escala": 1.9, "solido": true }
+    ],
+    "items": [
+      { "id": "nucleo", "sprite": "cohete_nucleo", "nombre": "Etapa central", "kg": 900, "x": 1700, "y": 1500, "zona": "Depósito de combustible" },
+      { "id": "prop1", "sprite": "cohete_propulsor", "nombre": "Propulsor", "kg": 600, "x": 1080, "y": 1560, "zona": "Patio de pruebas" },
+      { "id": "prop2", "sprite": "cohete_propulsor", "nombre": "Propulsor", "kg": 600, "x": 2100, "y": 1280, "zona": "Granja solar" },
+      { "id": "superior", "sprite": "cohete_etapa_superior", "nombre": "Etapa superior", "kg": 300, "x": 880, "y": 720, "zona": "Hangar de ensamblaje" },
+      { "id": "tanque", "sprite": "tanque_criogenico", "nombre": "Tanque de repuesto", "kg": 500, "x": 1960, "y": 640, "zona": "Laboratorio",
+        "rechazo": "Ese tanque es de repuesto: el cohete lleva sus tanques dentro de la etapa central." }
+    ],
+    "receta": { "tipo": "orden", "orden": ["Etapa central", "Propulsor", "Propulsor", "Etapa superior"],
+      "pistas": ["Primero va la columna vertebral: la etapa central.", "Los propulsores se sujetan a los costados de la etapa central.", "Falta el otro propulsor: dos iguales mantienen el cohete equilibrado.", "Arriba de todo va la etapa superior."] }
+  }
+}

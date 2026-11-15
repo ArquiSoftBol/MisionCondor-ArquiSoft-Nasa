@@ -1,0 +1,8 @@
+node_modules
+dist
+*.zip
+datos
+herramientas/datos
+.claude
+.git
+docs

@@ -1,0 +1,31 @@
+# Servidor propio / VPS / PC del laboratorio:   docker compose up -d --build
+# Con HTTPS automático (dominio apuntando a la IP):  DOMINIO=condor.midominio.com docker compose --profile https up -d --build
+services:
+  condor:
+    build: .
+    image: mision-condor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      CONDOR_DATOS: /datos
+    volumes:
+      - condor-datos:/datos
+
+  # Caddy saca el certificado de Let's Encrypt solo y reenvía también el WebSocket (/ws)
+  https:
+    profiles: [https]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from ${DOMINIO:?pon DOMINIO=tu.dominio} --to condor:8080
+    volumes:
+      - caddy-datos:/data
+    depends_on: [condor]
+
+volumes:
+  condor-datos:
+  caddy-datos:

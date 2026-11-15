@@ -1,0 +1,25 @@
+# dependencias y compilados
+node_modules
+dist
+*.zip
+
+# datos locales (SQLite) — en Render van al disco /datos
+datos/
+herramientas/datos/
+*.db
+
+# herramientas de desarrollo (no son parte de lo jugable)
+herramientas/moldes/
+herramientas/audio-anterior/
+herramientas/servir-moldes.mjs
+herramientas/guion.mjs
+docs/historial/
+docs/STORYBOARD.md
+.claude/
+.gdignore
+
+# sistema
+.DS_Store
+Thumbs.db
+*.log
+.env
