@@ -115,10 +115,10 @@ export class Mision1Sistemas extends Phaser.Scene {
     instalarPausa(this);
     this.lista = new ListaHolo(this, 14, 70, 'DIAGNÓSTICO', ORDEN.map(k => SISTEMAS[k].nombre.charAt(0) + SISTEMAS[k].nombre.slice(1).toLowerCase()), 196);
     this.lista.actual(-1);
-    this.presupuesto = new Presupuesto(this, W - 214, 64, 'PRESUPUESTO', [
+    this.presupuesto = new Presupuesto(this, W - 244, 64, 'PRESUPUESTO', [
       { id: 'masa', etiqueta: 'MASA', limite: MASA_MAX, unidad: 'kg', color: 0x3ff3ff },
       { id: 'energia', etiqueta: 'ENERGÍA EN JÚPITER', limite: 0, unidad: 'W', color: 0xffd23f, minimo: true },
-    ], 200);
+    ], 230);
 
     this.op = new Operario(this, FRENTE.x, FRENTE.y, spriteProtagonista(), 2.1);
     this.op.mirar(0);

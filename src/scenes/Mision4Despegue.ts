@@ -77,14 +77,15 @@ export class Mision4Despegue extends Phaser.Scene {
     this.cohete = new Actor(this, 480, 486, 'cohete_completo', { escala: 2.6, dir: 0 }).setDepth(5);
 
     this.hud = this.add.text(20, 18, '', { fontFamily: FUENTE_PIXEL, fontSize: '13px', color: '#ffffff', lineSpacing: 10, backgroundColor: '#000000aa', padding: { x: 10, y: 10 } }).setDepth(50);
-    this.add.rectangle(W - 240, 32, 320, 26, 0x000000, 0.7).setStrokeStyle(2, 0xffffff).setDepth(50);
-    this.barra = this.add.rectangle(W - 398, 32, 316, 20, 0xffd23f).setOrigin(0, 0.5).setDepth(51);
-    this.barraTxt = this.add.text(W - 240, 58, 'COMBUSTIBLE', { fontFamily: FUENTE, fontSize: '13px', fontStyle: '800', color: '#fff' }).setOrigin(0.5, 0).setDepth(51);
+    this.add.rectangle(W - 272, 32, 300, 26, 0x000000, 0.7)   // termina antes de los botones ? y pausa
+     .setStrokeStyle(2, 0xffffff).setDepth(50);
+    this.barra = this.add.rectangle(W - 420, 32, 296, 20, 0xffd23f).setOrigin(0, 0.5).setDepth(51);
+    this.barraTxt = this.add.text(W - 272, 58, 'COMBUSTIBLE', { fontFamily: FUENTE, fontSize: '13px', fontStyle: '800', color: '#fff' }).setOrigin(0.5, 0).setDepth(51);
     this.pintarHud();
-    this.panelVuelo = new Presupuesto(this, W - 214, 84, 'MOTORES', [
+    this.panelVuelo = new Presupuesto(this, W - 244, 84, 'MOTORES', [
       { id: 'acel', etiqueta: 'ACELERADOR', limite: 100, unidad: '%', color: 0x3cff6a },
-      { id: 'estres', etiqueta: 'ESTRÉS ESTRUCTURAL', limite: 100, unidad: '%', color: 0x3ff3ff },
-    ], 200);
+      { id: 'estres', etiqueta: 'ESTRÉS', limite: 100, unidad: '%', color: 0x3ff3ff },
+    ], 230);
     this.panelVuelo.poner('acel', 100);
     // acelerador táctil
     boton(this, W - 52, H - 150, '▲', () => this.cambiarAcel(0.15), { ancho: 64, alto: 52, variante: 'fantasma', tam: 22 }).setDepth(55);

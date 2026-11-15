@@ -11,7 +11,7 @@ export interface Medidor {
   minimo?: boolean;
 }
 
-interface Barra { m: Medidor; valor: number; limite: number; g: Phaser.GameObjects.Graphics; txt: Phaser.GameObjects.Text; tw?: Phaser.Tweens.Tween; pinta: { v: number } }
+interface Barra { m: Medidor; valor: number; limite: number; g: Phaser.GameObjects.Graphics; txt: Phaser.GameObjects.Text; et: Phaser.GameObjects.Text; tw?: Phaser.Tweens.Tween; pinta: { v: number } }
 
 export class Presupuesto {
   readonly cont: Phaser.GameObjects.Container;
@@ -29,7 +29,7 @@ export class Presupuesto {
       const txt = s.add.text(ancho - 12, yy, '', { fontFamily: FUENTE, fontSize: '12px', fontStyle: '800', color: '#e8f6ff' }).setOrigin(1, 0.5);
       const g = s.add.graphics();
       this.cont.add([et, txt, g]);
-      const b: Barra = { m, valor: 0, limite: m.limite, g, txt, pinta: { v: 0 } };
+      const b: Barra = { m, valor: 0, limite: m.limite, g, txt, et, pinta: { v: 0 } };
       this.barras.set(m.id, b);
       this.dibujar(b);
     });
@@ -71,5 +71,8 @@ export class Presupuesto {
     if (frac > 0) b.g.fillStyle(col, 1).fillRoundedRect(12, yy - 5, Math.max(6, w * frac), 10, 4);
     b.g.lineStyle(2, 0xffffff, 0.9).lineBetween(12 + w * lim, yy - 9, 12 + w * lim, yy + 9);   // marca del límite
     b.txt.setText(`${numero(Math.round(b.pinta.v))} / ${numero(b.limite)} ${b.m.unidad}`).setColor(mal ? '#ff8a7a' : '#e8f6ff');
+    // si la etiqueta no cabe junto al valor, se achica (nunca se pisan)
+    const libre = this.ancho - 12 - b.txt.width - 10 - 12;
+    b.et.setScale(Math.max(0.6, Math.min(1, libre / (b.et.width || 1))));
   }
 }

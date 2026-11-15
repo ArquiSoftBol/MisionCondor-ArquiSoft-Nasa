@@ -613,6 +613,7 @@ export const EN: Record<string, string> = {
   'Con {k} kg se pasa del límite de {m} kg.': 'With {k} kg it goes over the {m} kg limit.',
   'primero va: {p}.': 'first comes: {p}.',
   'Esa pieza no va en el cohete.': 'That part doesn’t go on the rocket.',
+  'ESTRÉS': 'STRESS',
   'Primero escribe tu nombre.': 'Type your name first.',
   'Ya hay una pieza de {a}.': 'There is already a {a} part.',
   'Con {a} kg se pasa del límite de {b} kg.': 'With {a} kg it goes over the {b} kg limit.',

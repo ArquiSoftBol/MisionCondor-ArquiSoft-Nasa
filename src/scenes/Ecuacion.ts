@@ -63,7 +63,7 @@ export class Ecuacion extends Phaser.Scene {
     this.add.rectangle(x0, y0, ancho, 26, 0x0b1222).setOrigin(0, 0.5).setStrokeStyle(2, 0xffffff, 0.6);
     this.barra = this.add.rectangle(x0 + 2, y0, 10, 20, 0xff4a3d).setOrigin(0, 0.5);
     const meta = x0 + ancho * (NECESARIO / max);
-    this.add.rectangle(meta, y0, 4, 44, 0x3cff6a);
+    this.add.rectangle(meta, y0, 4, 32, 0x3cff6a);   // no tapa la lectura del Δv
     this.add.text(meta, y0 + 26, t('necesario 2,80'), { fontFamily: FUENTE, fontSize: '12px', fontStyle: '800', color: CSS.verde }).setOrigin(0.5, 0);
     this.add.text(x0, y0 - 30, t('VELOCIDAD DE ESCAPE (Δv)'), { fontFamily: FUENTE_PIXEL, fontSize: '9px', color: '#9fdcff' });
     this.lectura = this.add.text(x0 + ancho, y0 - 30, '', { fontFamily: FUENTE_PIXEL, fontSize: '11px', color: '#ffffff' }).setOrigin(1, 0);
@@ -80,8 +80,8 @@ export class Ecuacion extends Phaser.Scene {
       const casa = { x: 105 + (i % 4) * 98, y: 276 + Math.floor(i / 4) * 120 };
       const c = this.add.container(casa.x, casa.y);
       const fondo = this.add.rectangle(0, 0, 90, 116, car.fija ? 0x101826 : 0x0d1f30, 0.95).setStrokeStyle(2, car.id === 'rover' ? 0xffe14d : car.fija ? 0x5a6a88 : 0x3ff3ff, 0.9);
-      const a = new Actor(this, 0, 22, car.sprite, { escala: car.escala, dir: 1 });
-      const nom = this.add.text(0, 34, t(car.nombre), { fontFamily: FUENTE, fontSize: '11px', fontStyle: '800', color: '#e8f6ff', align: 'center', wordWrap: { width: 84 } }).setOrigin(0.5, 0);
+      const a = new Actor(this, 0, 14, car.sprite, { escala: car.escala, dir: 1 });
+      const nom = this.add.text(0, 54, t(car.nombre), { fontFamily: FUENTE, fontSize: '11px', fontStyle: '800', color: '#e8f6ff', align: 'center', wordWrap: { width: 84 }, lineSpacing: -2 }).setOrigin(0.5, 1);   // anclado abajo: los nombres de 2 líneas no se salen
       const kg = this.add.text(0, -50, `${car.kg} kg`, { fontFamily: FUENTE_PIXEL, fontSize: '8px', color: car.fija ? '#8a96ae' : '#ffe14d' }).setOrigin(0.5);
       c.add([fondo, a, nom, kg]);
       if (car.fija) { kg.setX(-8); c.add(icono(this, kg.width / 2 + 4, -50, 'ico_candado', 14)); }
