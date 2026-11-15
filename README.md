@@ -25,6 +25,14 @@ npm run servidor       # multijugador en desarrollo (puerto 8787)
 npm run empaquetar     # dist/ + MisionCondor.zip (jugable sin internet con dist/iniciar.bat)
 ```
 
+## QA (pruebas automáticas)
+
+```bash
+npm run qa
+```
+
+Servidor + juego completo en PC, celular y tablet. Detalle y checklist manual: [docs/QA.md](docs/QA.md).
+
 ## Atajos de prueba
 
 `?escena=MisionMarte` (o cualquier escena) · `?escena=Cinematica&bloque=epilogo&cuadro=3` · `?escena=Capitulo&paso=9`
@@ -45,5 +53,5 @@ npm run empaquetar     # dist/ + MisionCondor.zip (jugable sin internet con dist
 
 - Guion por escenas: [docs/GUION.md](docs/GUION.md) · Historia del multijugador: [docs/HISTORIA_MULTIJUGADOR.md](docs/HISTORIA_MULTIJUGADOR.md)
 - Stack y proceso: [docs/STACK_TECNOLOGICO.md](docs/STACK_TECNOLOGICO.md) · Arquitectura: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
-- Sprites e íconos: [docs/SPRITES.md](docs/SPRITES.md) · Publicar (deploy): [docs/DEPLOY.md](docs/DEPLOY.md)
+- QA y checklist: [docs/QA.md](docs/QA.md) · Sprites e íconos: [docs/SPRITES.md](docs/SPRITES.md) · Publicar (deploy): [docs/DEPLOY.md](docs/DEPLOY.md)
 - Planes ya ejecutados: [docs/historial/](docs/historial/)

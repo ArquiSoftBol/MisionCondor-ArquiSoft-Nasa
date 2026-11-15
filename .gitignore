@@ -23,3 +23,9 @@ docs/STORYBOARD.md
 Thumbs.db
 *.log
 .env
+
+# QA
+qa-reporte/
+test-results/
+playwright-report/
+dist-equipo/

@@ -30,6 +30,7 @@ import { Capitulo } from './scenes/Capitulo';
 import { MisionMarte } from './scenes/MisionMarte';
 import { instalarTraduccion, cambiarIdioma } from './core/idioma';
 import { Musica } from './core/musica';
+import { Red } from './core/red';
 import { esTactil } from './ui/palanca';
 
 // Idioma: ?idioma=en / ?idioma=es fuerza uno (útil para probar); si no, el guardado en el perfil.
@@ -89,3 +90,4 @@ juego.canvas.addEventListener('webglcontextlost', e => {
 // Para depurar desde la consola del navegador
 (window as unknown as { juego: Phaser.Game; musica: typeof Musica }).juego = juego;
 (window as unknown as { musica: typeof Musica }).musica = Musica;
+(window as unknown as { red: typeof Red }).red = Red;   // los tests QA simulan al compañero con esto

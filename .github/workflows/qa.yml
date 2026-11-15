@@ -1,0 +1,44 @@
+# QA automática: en cada push y pull request corre los tests del servidor y los de punta a punta
+# (PC, celular y tablet). Si algo falla, el reporte HTML queda como artefacto descargable.
+name: QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  servidor:
+    name: Servidor y multijugador
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  juego:
+    name: Juego (PC · celular · tablet)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: qa-reporte
+          path: |
+            qa-reporte/
+            test-results/
+          retention-days: 14

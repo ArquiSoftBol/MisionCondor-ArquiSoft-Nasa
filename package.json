@@ -12,7 +12,13 @@
     "servidor": "node herramientas/servir.mjs",
     "empaquetar": "node herramientas/atlas.mjs && npm run build && node herramientas/empaquetar.mjs",
     "build:servidor": "node herramientas/atlas.mjs && npm run build && node -e \"require('fs').copyFileSync('herramientas/servir.mjs','dist/servir.mjs')\"",
-    "start": "node dist/servir.mjs"
+    "start": "node dist/servir.mjs",
+    "test": "node --test \"tests/servidor/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "test:e2e:pc": "playwright test --project=pc",
+    "test:e2e:celular": "playwright test --project=celular",
+    "qa": "npm run test && npm run test:e2e",
+    "qa:reporte": "playwright show-report qa-reporte"
   },
   "dependencies": {
     "@fontsource/open-sans": "^5.3.0",
@@ -20,6 +26,7 @@
     "phaser": "3.90.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "typescript": "~5.9.3",
     "vite": "^7.1.12"
   },
