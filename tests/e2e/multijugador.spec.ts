@@ -101,13 +101,33 @@ test('multijugador · cohete: Cerrar la mesa, «?» de guía y piezas fuera de o
   await expect.poll(() => leer<boolean>(A, 'Coop', '!!s.mesaPanel')).toBe(true);
   expect(await hayTexto(A, 'Coop', 'DESPUÉS')).toBe(true);
   expect(await hayTexto(A, 'Coop', 'AHORA')).toBe(true);
+  // el Ingeniero se pone a teclear en su mesa, y el Recolector lo VE trabajando (no una imagen quieta)
+  expect(await leer<string>(A, 'Coop', 's.yoA.sprite')).toBe('ingeniero_trabaja');
+  await expect.poll(() => leer<string>(B, 'Coop', 's.otroA.sprite'), { timeout: 10_000 }).toBe('ingeniero_trabaja');
+  expect(await leer<boolean>(B, 'Coop', 's.otroA.base.anims.isPlaying')).toBe(true);
   await tocarTexto(A, info, 'Coop', 'Cerrar');
   await expect.poll(() => leer<boolean>(A, 'Coop', '!s.mesaPanel')).toBe(true);
-  // botón «?»: abre la guía de su rol y se cierra
+  await expect.poll(() => leer<string>(B, 'Coop', 's.otroA.pose'), { timeout: 10_000 }).toBe('quieto');
+  // al caminar usa la hoja con piernas que se mueven (antes se deslizaba sin mover las piernas)
+  if (!esCelular(info)) {
+    await A.keyboard.down('ArrowLeft');
+    await expect.poll(() => leer<string>(A, 'Coop', 's.yoA.sprite')).toBe('ingeniero_camina');
+    await expect.poll(() => leer<string>(B, 'Coop', 's.otroA.pose'), { timeout: 10_000 }).toBe('camina');
+    await A.keyboard.up('ArrowLeft');
+  }
+  // botón «?»: abre la guía de su rol y se cierra; mientras está abierta, USAR no abre la mesa detrás
   await tocar(A, info, W - 162, 30);
   await expect.poll(() => hayTexto(A, 'Coop', 'TU ROL')).toBe(true);
+  if (!esCelular(info)) { await A.keyboard.press('e'); expect(await leer<boolean>(A, 'Coop', '!!s.mesaPanel')).toBe(false); }
   await tocarTexto(A, info, 'Coop', '¡A jugar!');
   await expect.poll(() => leer<boolean>(A, 'Coop', '!s.dialogo')).toBe(true);
+  // alienígenas amigos en este mapa: pasean, y al acercarse uno saluda; con USAR dice otra cosa
+  expect(await leer<string[]>(B, 'Coop', 's.npcs.map(n => n.p.sprite)')).toEqual(['alien_amigo', 'alien_gelatina', 'alien_medusa']);
+  await B.evaluate(() => { const s: any = (window as any).juego.scene.getScene('Coop'); const n = s.npcs[0]; s.yoA.setPosition(n.p.x + 60, n.p.y + 10); });
+  await expect.poll(() => leer<string | null>(B, 'Coop', 's.npcs[0].burbuja ? s.npcs[0].burbuja.list[1].text : null'), { timeout: 10_000 }).toBeTruthy();
+  const primera = await leer<string>(B, 'Coop', 's.npcs[0].burbuja.list[1].text');
+  if (esCelular(info)) await tocarTexto(B, info, 'Coop', 'USAR'); else await B.keyboard.press('e');
+  await expect.poll(() => leer<string>(B, 'Coop', 's.npcs[0].burbuja.list[1].text')).not.toBe(primera);
   await A.context().close(); await B.context().close();
 });
 

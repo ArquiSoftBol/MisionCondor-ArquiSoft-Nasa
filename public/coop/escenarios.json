@@ -25,6 +25,13 @@
       { "id": "cactus_gigante", "x": 140, "y": 900, "escala": 2.2, "solido": true },
       { "id": "cactus_gigante", "x": 2480, "y": 1560, "escala": 2.0, "solido": true }
     ],
+    "companeros": [
+      {"sprite": "npc_dona_rosa", "nombre": "Doña Rosa", "x": 1560, "y": 640, "radio": 150, "frases": ["¡Kamisaki! (¿Cómo estás?, en aymara)", "La quinua aguanta el frío del salar… como tu módulo aguantará el de Europa.", "En Europa el Sol brilla muy poco: allá la energía la da el RTG, no un panel solar."]},
+      {"sprite": "npc_mateo", "nombre": "Mateo", "x": 1960, "y": 1000, "radio": 160, "frases": ["¡Allin p'unchay! (¡Buen día!, en quechua)", "El tanque pesa 500 kg: ocupa todo el carro. Llévalo solo.", "Mi llama carga unos 30 kg. ¡Tu carro aguanta bastante más!"]},
+      {"sprite": "npc_llama", "nombre": "Llama", "x": 2060, "y": 1030, "radio": 120, "escala": 2, "frases": ["¡Mmmh! (la llama te mira y sigue lamiendo sal)", "(La llama mueve las orejas con sus flores de lana)"]},
+      {"sprite": "npc_cholita", "nombre": "Doña Justina", "x": 1000, "y": 1160, "radio": 150, "frases": ["¡Waliki! (¡Muy bien!, en aymara) Así se trabaja en equipo.", "Una taza o una planta no son sistemas: el Ingeniero las va a devolver.", "Los carteles de colores dicen qué edificio es cada uno."]},
+      {"sprite": "npc_mallku", "nombre": "Mallku Tomás", "x": 620, "y": 1220, "radio": 130, "frases": ["Un buen equipo es como el ayni: hoy te ayudo, mañana me ayudas.", "No pasen de 900 kg: con peso de más, la nave no llega a Europa.", "¡Jallalla! Que el módulo vuele alto."]}
+    ],
     "items": [
       { "id": "solar", "sprite": "panel_desplegable", "nombre": "Panel solar", "kg": 80, "sistema": "energia", "x": 2120, "y": 1290, "zona": "Granja solar",
         "rechazo": "En Europa el Sol brilla 25 veces menos: el panel solar no alcanza. Pide el RTG del laboratorio." },
@@ -58,7 +65,13 @@
       { "id": "granja_solar", "x": 2220, "y": 1150, "escala": 2.0, "solido": true },
       { "id": "deposito_combustible", "x": 1620, "y": 1380, "escala": 2.0, "solido": true },
       { "id": "patio_pruebas", "x": 1000, "y": 1420, "escala": 1.9, "solido": true },
-      { "id": "antena_espacio_profundo", "x": 2360, "y": 300, "escala": 1.9, "solido": true }
+      { "id": "antena_espacio_profundo", "x": 2360, "y": 300, "escala": 1.9, "solido": true },
+      { "id": "ovni_amigo", "x": 1760, "y": 930, "escala": 2, "solido": true }
+    ],
+    "companeros": [
+      {"sprite": "alien_amigo", "nombre": "Zib", "x": 1560, "y": 1050, "radio": 150, "frases": ["¡Bip bup! Vine desde muy lejos a ver su cohete.", "En mi planeta también se arma por etapas: primero la etapa central.", "Me regalaron esta chalina de aguayo en el Salar. ¡Abriga!"]},
+      {"sprite": "alien_gelatina", "nombre": "Blub", "x": 1990, "y": 1000, "radio": 130, "frases": ["¡Blub! Los propulsores van de a dos; con uno solo, el cohete se ladea.", "¡Blub blub! (salta de alegría al verte)", "El tanque de repuesto no va en el cohete: es una trampa."]},
+      {"sprite": "alien_medusa", "nombre": "Lumi", "x": 1450, "y": 700, "radio": 140, "frases": ["La etapa superior va arriba de todo. Lo vi desde la órbita.", "Brillo más cuando un equipo se ayuda.", "Su Sol es amarillo y cálido. ¡Qué suerte tienen!"]}
     ],
     "items": [
       { "id": "nucleo", "sprite": "cohete_nucleo", "nombre": "Etapa central", "kg": 900, "x": 1700, "y": 1500, "zona": "Depósito de combustible" },

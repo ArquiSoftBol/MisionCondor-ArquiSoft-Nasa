@@ -18,9 +18,10 @@ import { grano } from '../ui/cine';
 import { costraDeSal, senderos, cartel, sombra, polvoPasos, faro, Oscuridad, NOMBRE_EDIFICIO } from '../ui/coopEstilo';
 import { guiaCoop } from '../ui/guiaCoop';
 import { Palanca, esTactil } from '../ui/palanca';
+import { Personaje, hojasDe, POSES, type Pose } from '../ui/personaje';
+import { veredicto, sugerenciaPedido, piezaParaMontar, calibracionValida, moverAguja, paseo, posicionEn, type Msg, type Companero, type ItemDef, type Receta, type EstadoCoop, SISTEMA_NOMBRE } from '../core/coopLogica';
 
 type Rol = 'ingeniero' | 'recolector';
-interface ItemDef { id: string; sprite: string; nombre: string; kg: number; sistema?: string | null; x: number; y: number; zona: string; rechazo?: string }
 interface Escenario {
   nombre: string; descripcion: string; tiempo: number; cierre?: string;
   mapa: { ancho: number; alto: number; suelo: string; hora: string };
@@ -29,12 +30,19 @@ interface Escenario {
   entrega: { x: number; y: number; r: number };
   decorados: { id: string; x: number; y: number; escala: number; solido: boolean }[];
   items: ItemDef[];
-  receta: { tipo: 'sistemas' | 'orden'; ranuras?: string[]; masaMax?: number; orden?: string[] };
+  receta: Receta;
+  companeros?: Companero[];
 }
-interface Estado { items: { id: string; estado: string; x: number; y: number }[]; carga: string[]; bandeja: string[]; montado: { id: string; sistema: string | null }[]; masa: number; errores: number; pedido: string | null; inicio: number; ahora?: number; fin: { segundos: number; errores: number; estrellas: number } | null }
+type Estado = EstadoCoop;
 
 const VEL = 240;
-const SISTEMA_NOMBRE: Record<string, string> = { energia: 'Energía', control: 'Control', comunicacion: 'Comunicación', propulsion: 'Propulsión' };
+/** Mensaje de las reglas → texto traducido (los valores que son palabras también se traducen). */
+const tm = (m: Msg | null): string => m ? t(m.k, Object.fromEntries(Object.entries(m.p ?? {}).map(([k, v]) => [k, typeof v === 'string' ? t(v) : v]))) : '';
+// los alienígenas se mueven aunque estén parados (flotan, saltan); la gente y la llama se quedan de pie
+['alien_gelatina', 'alien_amigo', 'alien_medusa'].forEach(id => { POSES[id] = { quieto: id, camina: id }; });
+
+/** Un compañero del mapa (no lo controla nadie): pasea, mira a quien se acerca y conversa. */
+interface Npc { def: Companero; p: Personaje; ruta: [number, number][]; burbuja?: Phaser.GameObjects.Container; frase: number; cerca: boolean; nombre: Phaser.GameObjects.Text }
 
 export class Coop extends Phaser.Scene {
   private esc!: Escenario;
@@ -42,12 +50,14 @@ export class Coop extends Phaser.Scene {
   private yo = 0;
   private sala!: VistaSala;
   private estado?: Estado;
-  private yoA!: Actor;
-  private otroA?: Actor;
+  private yoA!: Personaje;
+  private otroA?: Personaje;
+  private otroPose: Pose = 'quieto';
+  private npcs: Npc[] = [];
   private otroObj = { x: 0, y: 0 };
-  private etiquetas = new Map<Actor, Phaser.GameObjects.Text>();
+  private etiquetas = new Map<Phaser.GameObjects.Container, Phaser.GameObjects.Text>();
   private items = new Map<string, { a: Actor; anillo: Phaser.GameObjects.Ellipse; tx: Phaser.GameObjects.Text; faro: Phaser.GameObjects.Image }>();
-  private sombras = new Map<Actor, Phaser.GameObjects.Ellipse>();
+  private sombras = new Map<Phaser.GameObjects.Container, Phaser.GameObjects.Ellipse>();
   private polvo?: Phaser.GameObjects.Particles.ParticleEmitter;
   private pasoT = 0;
   private cargaIconos?: Phaser.GameObjects.Container;
@@ -79,11 +89,12 @@ export class Coop extends Phaser.Scene {
     this.esc = d.esc; this.rol = d.rol; this.yo = d.yo; this.sala = d.sala;
     this.estado = undefined; this.otroA = undefined; this.items = new Map(); this.etiquetas = new Map(); this.solidos = [];
     this.mesaPanel = undefined; this.seleccion = null; this.calib = undefined; this.terminado = false; this.dialogo = undefined;
-    this.sombras = new Map(); this.cargaIconos = undefined; this.cargaClave = ''; this.tecla = undefined; this.noche = undefined;
+    this.sombras = new Map(); this.npcs = []; this.otroPose = 'quieto'; this.cargaIconos = undefined; this.cargaClave = ''; this.tecla = undefined; this.noche = undefined;
   }
 
   preload(): void {
-    const ids = new Set<string>([...DECORADOS, ROLES.ingeniero.sprite, ROLES.recolector.sprite, this.esc.mesa.sprite]);
+    const ids = new Set<string>([...DECORADOS, ...hojasDe(ROLES.ingeniero.sprite), ...hojasDe(ROLES.recolector.sprite), this.esc.mesa.sprite]);
+    (this.esc.companeros ?? []).forEach(c => hojasDe(c.sprite).forEach(id => ids.add(id)));
     this.esc.decorados.forEach(d => ids.add(d.id));
     this.esc.items.forEach(i => ids.add(i.sprite));
     cargar(this, [...ids]);
@@ -133,18 +144,19 @@ export class Coop extends Phaser.Scene {
     });
     // los dos jugadores
     const [x0, y0] = this.esc.inicio[this.rol];
-    this.yoA = new Actor(this, x0, y0, ROLES[this.rol].sprite, { escala: 2.3, dir: 1 }).pausar();
+    this.yoA = new Personaje(this, x0, y0, ROLES[this.rol].sprite, { escala: 2.3, dir: 1 });
     const nombreYo = this.sala.jugadores.find(j => j.id === this.yo)?.nombre ?? '';
     this.etiquetar(this.yoA, `${nombreYo} · ${t(ROLES[this.rol].nombre)}`, ROLES[this.rol].color);
     const otroRol: Rol = this.rol === 'ingeniero' ? 'recolector' : 'ingeniero';
     const [x1, y1] = this.esc.inicio[otroRol];
-    this.otroA = new Actor(this, x1, y1, ROLES[otroRol].sprite, { escala: 2.3, dir: 1 }).pausar();
+    this.otroA = new Personaje(this, x1, y1, ROLES[otroRol].sprite, { escala: 2.3, dir: 1 });
     this.otroObj = { x: x1, y: y1 };
     const otro = this.sala.jugadores.find(j => j.id !== this.yo);
     this.etiquetar(this.otroA, `${otro?.nombre ?? '?'} · ${t(ROLES[otroRol].nombre)}`, ROLES[otroRol].color);
     this.cameras.main.startFollow(this.yoA, true, 0.12, 0.12);
     [this.yoA, this.otroA].forEach(a => this.sombras.set(a, sombra(this)));
     this.polvo = polvoPasos(this);
+    this.crearCompaneros();
     if (noche) this.noche = new Oscuridad(this);
     vineta(this, noche ? 0.55 : 0.35, 41000);
     grano(this, 41001, 0.05);
@@ -165,7 +177,12 @@ export class Coop extends Phaser.Scene {
 
     this.quitar.push(
       Red.on('estado', m => this.aplicar(m as unknown as Estado)),
-      Red.on('pos', m => { if (m.id !== this.yo) { this.otroObj = { x: m.x as number, y: m.y as number }; if (this.otroA) { this.otroA.mirar(m.dir as number); if (m.mov) this.otroA.seguir(); else this.otroA.pausar(); } } }),
+      Red.on('pos', m => {
+        if (m.id === this.yo) return;
+        this.otroObj = { x: m.x as number, y: m.y as number };
+        this.otroPose = m.trab ? 'trabaja' : m.mov ? 'camina' : 'quieto';
+        if (this.otroA) this.otroA.mirar(m.dir as number).ponerPose(this.otroPose);
+      }),
       Red.on('evento', m => this.evento(m)),
       Red.on('aviso', m => aviso(this, String(m.msg), CSS.amarillo, 110)),
       Red.on('fin', m => this.fin(m)),
@@ -181,7 +198,7 @@ export class Coop extends Phaser.Scene {
     if (Red.ultimo.estado) this.aplicar(Red.ultimo.estado as unknown as Estado);   // el primer estado llega antes de que la escena escuche
   }
 
-  private etiquetar(a: Actor, txt: string, color: number): void {
+  private etiquetar(a: Phaser.GameObjects.Container, txt: string, color: number): void {
     const e = this.add.text(a.x, a.y - 92, txt, { fontFamily: FUENTE, fontSize: '12px', fontStyle: '800', color: '#ffffff', backgroundColor: '#' + color.toString(16).padStart(6, '0') + 'cc', padding: { x: 6, y: 2 } }).setOrigin(0.5).setDepth(6000);
     this.etiquetas.set(a, e);
   }
@@ -252,20 +269,22 @@ export class Coop extends Phaser.Scene {
 
   // ───────── acciones ─────────
   private usar(): void {
-    if (!this.estado || this.terminado) return;
+    if (!this.estado || this.terminado || this.dialogo) return;   // con una ventana abierta (guía, salir) no se usa nada detrás
     if (this.mesaPanel) { if (this.calib) this.montar(); return; }
     const { x, y } = this.yoA;
-    Red.enviar({ t: 'pos', x: Math.round(x), y: Math.round(y), dir: this.yoA.dir, mov: false }); this.ultimoEnvio = this.time.now;
+    this.enviarPos(false);
     if (this.rol === 'recolector') {
       const e = this.esc.entrega;
       if (this.estado.carga.length && Math.hypot(x - e.x, y - e.y) < e.r + 30) { Red.enviar({ t: 'entregar' }); return; }
       const libre = this.estado.items.filter(i => i.estado === 'libre').map(i => ({ i, d: Math.hypot(i.x - x, i.y - y) })).sort((a, b) => a.d - b.d)[0];
       if (libre && libre.d < 100) { Red.enviar({ t: 'tomar', item: libre.i.id }); Sonido.click(); return; }
+      if (this.conversar()) return;
       aviso(this, 'Acércate a una pieza o a la entrega del hangar', CSS.gris, 110);
     } else {
       const m = this.esc.mesa;
-      if (Math.hypot(x - m.x, y - m.y) < m.r + 40) this.abrirMesa();
-      else aviso(this, 'Tu mesa está en el hangar', CSS.gris, 110);
+      if (Math.hypot(x - m.x, y - m.y) < m.r + 40) { this.abrirMesa(); this.enviarPos(false); return; }
+      if (this.conversar()) return;
+      aviso(this, 'Tu mesa está en el hangar', CSS.gris, 110);
     }
   }
 
@@ -273,7 +292,7 @@ export class Coop extends Phaser.Scene {
   private abrirMesa(): void {
     const e = this.estado!;
     if (this.seleccion && !e.bandeja.includes(this.seleccion)) this.seleccion = null;
-    if (!this.seleccion) this.seleccion = e.bandeja.find(id => this.veredicto(id).tipo === 'ahora') ?? null;
+    if (!this.seleccion) this.seleccion = piezaParaMontar(this.esc.items, this.esc.receta, e);
     this.mesaPanel?.destroy();
     const c = this.add.container(0, 0).setScrollFactor(0).setDepth(95000);
     this.mesaPanel = c;
@@ -282,16 +301,17 @@ export class Coop extends Phaser.Scene {
     // bandeja
     c.add(this.add.text(70, 70, t('PIEZAS RECIBIDAS'), { fontFamily: FUENTE_PIXEL, fontSize: '9px', color: '#ffb33f' }));
     if (!e.bandeja.length) c.add(this.add.text(70, 100, t('Todavía no llegó nada.\nPídele piezas al Recolector →'), { fontFamily: FUENTE, fontSize: '13px', fontStyle: '700', color: '#8a9cbc', lineSpacing: 4 }));
+    const chica = e.bandeja.length > 6, paso = chica ? 82 : 128, k = chica ? 0.78 : 1;   // con muchas piezas, tarjetas más bajas (nunca tapan la calibración)
     e.bandeja.forEach((id, i) => {
-      const d = this.def(id), x = 112 + (i % 3) * 96, y = 136 + Math.floor(i / 3) * 128, sel = this.seleccion === id;
+      const d = this.def(id), x = 112 + (i % 3) * 96, y = (chica ? 118 : 136) + Math.floor(i / 3) * paso, sel = this.seleccion === id;
       const v = this.veredicto(id), borde = sel ? 0xffe14d : v.tipo === 'ahora' ? 0x3cff6a : v.tipo === 'despues' ? 0x3ff3ff : 0xff4a3d;
-      const g = this.add.graphics().fillStyle(sel ? 0x0e2a3e : 0x0b1222, 1).fillRoundedRect(x - 44, y - 50, 88, 104, 10).lineStyle(sel ? 3 : 2, borde, 1).strokeRoundedRect(x - 44, y - 50, 88, 104, 10);
-      const etq = this.add.text(x, y + 66, t(v.tipo === 'ahora' ? '✔ VA AHORA' : v.tipo === 'despues' ? '… DESPUÉS' : '✖ NO VA'), { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: v.tipo === 'ahora' ? '#7dff9c' : v.tipo === 'despues' ? '#9fe8ff' : '#ff8a7a' }).setOrigin(0.5);
+      const hh = 104 * k, g = this.add.graphics().fillStyle(sel ? 0x0e2a3e : 0x0b1222, 1).fillRoundedRect(x - 44, y - 50 * k, 88, hh, 10).lineStyle(sel ? 3 : 2, borde, 1).strokeRoundedRect(x - 44, y - 50 * k, 88, hh, 10);
+      const etq = this.add.text(x, y + (chica ? 48 : 66), t(v.tipo === 'ahora' ? '✔ VA AHORA' : v.tipo === 'despues' ? '… DESPUÉS' : '✖ NO VA'), { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: v.tipo === 'ahora' ? '#7dff9c' : v.tipo === 'despues' ? '#9fe8ff' : '#ff8a7a' }).setOrigin(0.5);
       c.add(etq);
-      const a = new Actor(this, x, y + 12, d.sprite, { escala: d.kg >= 500 ? 0.8 : 1.1, dir: 1 }).pausar();
-      const n = this.add.text(x, y + 22, t(d.nombre), { fontFamily: FUENTE, fontSize: '10px', fontStyle: '800', color: '#ffffff', align: 'center', wordWrap: { width: 82 } }).setOrigin(0.5, 0);
-      const kg = this.add.text(x, y - 44, `${d.kg} kg`, { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: '#ffe14d' }).setOrigin(0.5, 0);
-      const z = this.add.zone(x, y, 88, 104).setInteractive({ useHandCursor: true }).on('pointerdown', () => { Sonido.click(); this.seleccion = id; this.calib = undefined; this.abrirMesa(); });
+      const a = new Actor(this, x, y + 12 * k, d.sprite, { escala: (d.kg >= 500 ? 0.8 : 1.1) * k, dir: 1 }).pausar();
+      const n = this.add.text(x, y + 22 * k, t(d.nombre), { fontFamily: FUENTE, fontSize: '10px', fontStyle: '800', color: '#ffffff', align: 'center', wordWrap: { width: 82 } }).setOrigin(0.5, 0);
+      const kg = this.add.text(x, y - 44 * k, `${d.kg} kg`, { fontFamily: FUENTE_PIXEL, fontSize: '7px', color: '#ffe14d' }).setOrigin(0.5, 0);
+      const z = this.add.zone(x, y, 88, hh).setInteractive({ useHandCursor: true }).on('pointerdown', () => { Sonido.click(); this.seleccion = id; this.calib = undefined; this.abrirMesa(); });
       c.add([g, a, n, kg, z]);
     });
     // ranuras / orden
@@ -331,7 +351,7 @@ export class Coop extends Phaser.Scene {
       const d = this.def(this.seleccion);
       c.add(this.add.text(400, 330, `${t('Montar')}: ${t(d.nombre)}`, { fontFamily: FUENTE, fontSize: '15px', fontStyle: '800', color: '#ffe14d' }));
       const v = this.veredicto(this.seleccion);
-      c.add(this.add.text(400, 352, v.tipo === 'ahora' ? t('Va ahora. Detén la aguja en la zona verde y pulsa MONTAR.') : `${t(v.tipo === 'despues' ? 'Todavía no:' : 'No conviene:')} ${t(v.msg)}`, { fontFamily: FUENTE, fontSize: '11px', fontStyle: '700', color: v.tipo === 'ahora' ? '#7dff9c' : v.tipo === 'despues' ? '#9fe8ff' : '#ff8a7a', wordWrap: { width: 420 } }));
+      c.add(this.add.text(400, 352, v.tipo === 'ahora' ? t('Va ahora. Detén la aguja en la zona verde y pulsa MONTAR.') : `${t(v.tipo === 'despues' ? 'Todavía no:' : 'No conviene:')} ${tm(v.msg)}`, { fontFamily: FUENTE, fontSize: '11px', fontStyle: '700', color: v.tipo === 'ahora' ? '#7dff9c' : v.tipo === 'despues' ? '#9fe8ff' : '#ff8a7a', wordWrap: { width: 420 } }));
       if (!this.calib) { const z0 = 0.18 + Math.random() * 0.52; this.calib = { aguja: 0, dir: 1, zona: [z0, z0 + 0.22], g: this.add.graphics() }; }
       else this.calib.g = this.add.graphics();
       c.add(this.calib.g);
@@ -344,6 +364,15 @@ export class Coop extends Phaser.Scene {
     }
     c.add(boton(this, W / 2 + 330, 494, 'Cerrar', () => this.cerrarMesa(), { ancho: 140, alto: 40, tam: 14, variante: 'neutro', retardo: 0 }));
     fijarEnPantalla(c);
+    // el Ingeniero mira su mesa y se pone a teclear (el Recolector lo ve trabajando)
+    const m = this.esc.mesa;
+    this.yoA.mirarHacia(m.x - this.yoA.x, m.y - this.yoA.y).ponerPose('trabaja');
+  }
+
+  /** Manda mi posición y pose ya (sin esperar al siguiente envío periódico). */
+  private enviarPos(mov: boolean): void {
+    Red.enviar({ t: 'pos', x: Math.round(this.yoA.x), y: Math.round(this.yoA.y), dir: this.yoA.dir, mov, trab: !!this.mesaPanel });
+    this.ultimoEnvio = this.time.now;
   }
 
   // ───────── salir a mitad de partida ─────────
@@ -396,45 +425,21 @@ export class Coop extends Phaser.Scene {
   }
 
   /** ¿Esta pieza se puede montar ya? (misma regla que el servidor, para ayudar antes de equivocarse) */
-  private veredicto(id: string): { tipo: 'ahora' | 'despues' | 'no'; msg: string } {
-    const d = this.def(id), e = this.estado!, r = this.esc.receta;
-    if (d.rechazo) return { tipo: 'no', msg: d.rechazo };
-    if (r.tipo === 'sistemas') {
-      if (!d.sistema) return { tipo: 'no', msg: 'Eso no es un sistema del vehículo.' };
-      if (e.montado.some(m => m.sistema === d.sistema)) return { tipo: 'no', msg: t('Ya hay una pieza de {s}.', { s: t(SISTEMA_NOMBRE[d.sistema] ?? d.sistema) }) };
-      if (r.masaMax && e.masa + d.kg > r.masaMax) return { tipo: 'no', msg: t('Con {k} kg se pasa del límite de {m} kg.', { k: d.kg, m: r.masaMax }) };
-      return { tipo: 'ahora', msg: '' };
-    }
-    const sigue = r.orden![e.montado.length];
-    if (d.nombre === sigue) return { tipo: 'ahora', msg: '' };
-    if (r.orden!.slice(e.montado.length).includes(d.nombre)) return { tipo: 'despues', msg: t('primero va: {p}.', { p: t(sigue) }) };
-    return { tipo: 'no', msg: 'Esa pieza no va en el cohete.' };
-  }
+  private veredicto(id: string) { return veredicto(this.esc.items, this.esc.receta, this.estado!, id); }
 
   /** La pieza que conviene pedir: la que falta y nadie trae todavía. */
-  private sugerenciaPedido(): string | null {
-    const e = this.estado!, r = this.esc.receta;
-    const enCamino = (id: string) => e.carga.includes(id) || e.bandeja.includes(id) || e.montado.some(m => m.id === id);
-    const libres = this.esc.items.filter(d => !d.rechazo && !enCamino(d.id) && e.items.find(i => i.id === d.id)?.estado === 'libre');
-    if (r.tipo === 'sistemas') {
-      const falta = r.ranuras!.filter(k => !e.montado.some(m => m.sistema === k) && !e.bandeja.concat(e.carga).some(id => this.def(id).sistema === k && !this.def(id).rechazo));
-      return libres.find(d => d.sistema && falta.includes(d.sistema))?.id ?? null;
-    }
-    const pendientes = r.orden!.slice(e.montado.length);
-    for (const n of pendientes) {
-      const yaVienen = e.bandeja.concat(e.carga).filter(id => this.def(id).nombre === n).length;
-      const necesarias = pendientes.filter(x => x === n).length;
-      if (yaVienen < necesarias) { const d = libres.find(x => x.nombre === n); if (d) return d.id; }
-    }
-    return null;
-  }
+  private sugerenciaPedido(): string | null { return sugerenciaPedido(this.esc.items, this.esc.receta, this.estado!); }
 
-  private cerrarMesa(): void { this.mesaPanel?.destroy(); this.mesaPanel = undefined; this.calib = undefined; }
+  private cerrarMesa(): void {
+    const abierta = !!this.mesaPanel;
+    this.mesaPanel?.destroy(); this.mesaPanel = undefined; this.calib = undefined;
+    if (abierta && this.yoA?.active) { this.yoA.ponerPose('quieto'); this.enviarPos(false); }
+  }
 
   private montar(): void {
     if (!this.calib || !this.seleccion) return;
     const { aguja, zona } = this.calib;
-    const calibrado = aguja >= zona[0] - 0.03 && aguja <= zona[1] + 0.03;   // un poco de margen por la demora del toque
+    const calibrado = calibracionValida(aguja, zona);   // un poco de margen por la demora del toque
     Red.enviar({ t: 'montar', item: this.seleccion, calibrado });
     this.seleccion = null; this.calib = undefined;
   }
@@ -442,8 +447,7 @@ export class Coop extends Phaser.Scene {
   private pintarCalibracion(dt: number): void {
     const c = this.calib;
     if (!c || !c.g.active) return;
-    c.aguja += c.dir * dt * 0.55;   // lenta: se puede acertar también con el dedo
-    if (c.aguja > 1) { c.aguja = 1; c.dir = -1; } else if (c.aguja < 0) { c.aguja = 0; c.dir = 1; }
+    Object.assign(c, moverAguja(c.aguja, c.dir, dt));   // lenta: se puede acertar también con el dedo
     const x = 400, y = 384, w = 330;
     c.g.clear().fillStyle(0x0b1222, 1).fillRoundedRect(x, y, w, 18, 6).fillStyle(0x3cff6a, 0.85).fillRect(x + w * c.zona[0], y, w * (c.zona[1] - c.zona[0]), 18);
     c.g.fillStyle(0xffffff, 1).fillRect(x + w * c.aguja - 2, y - 6, 4, 30);
@@ -463,7 +467,8 @@ export class Coop extends Phaser.Scene {
       if (c.down.isDown || k.S.isDown) dy += 1;
       if (this.palanca.activa) { dx = this.palanca.vx; dy = this.palanca.vy; }
       const p = this.input.activePointer;
-      if (!dx && !dy && p.isDown && !this.palanca.activa && !(p.x > W - 170 && p.y > H - 110)) { const wx = p.worldX - this.yoA.x, wy = p.worldY - this.yoA.y; if (Math.hypot(wx, wy) > 24) { dx = wx; dy = wy; } }
+      const sobreBoton = (p.x > W - 170 && p.y > H - 110) || p.y < 56 || (p.x > W - 205 && p.y < 190);   // USAR, barra de arriba (Salir, ?) y minimapa
+      if (!dx && !dy && p.isDown && !this.palanca.activa && !sobreBoton) { const wx = p.worldX - this.yoA.x, wy = p.worldY - this.yoA.y; if (Math.hypot(wx, wy) > 24) { dx = wx; dy = wy; } }
     }
     const mov = !!(dx || dy);
     if (mov) {
@@ -471,15 +476,19 @@ export class Coop extends Phaser.Scene {
       let nx = Phaser.Math.Clamp(this.yoA.x + (dx / n) * VEL * carga * dt, 30, this.esc.mapa.ancho - 30);
       let ny = Phaser.Math.Clamp(this.yoA.y + (dy / n) * VEL * carga * dt, 60, this.esc.mapa.alto - 20);
       for (const cu of this.solidos) { const r = empujar(cu, nx, ny, 18); if (r) { nx = r.x; ny = r.y; } }
-      this.yoA.setPosition(nx, ny).mirarHacia(dx, dy).seguir();
-    } else this.yoA.pausar();
+      this.yoA.setPosition(nx, ny).mirarHacia(dx, dy).ponerPose('camina');
+    } else this.yoA.ponerPose(this.mesaPanel ? 'trabaja' : 'quieto');
     this.yoA.setDepth(this.yoA.y);
-    if (time - this.ultimoEnvio > (mov ? 90 : 1000)) { this.ultimoEnvio = time; Red.enviar({ t: 'pos', x: Math.round(this.yoA.x), y: Math.round(this.yoA.y), dir: this.yoA.dir, mov }); }
+    if (time - this.ultimoEnvio > (mov ? 90 : 1000)) this.enviarPos(mov);
     // el compañero se desliza hacia su última posición conocida
     if (this.otroA) {
       this.otroA.x += (this.otroObj.x - this.otroA.x) * 0.2; this.otroA.y += (this.otroObj.y - this.otroA.y) * 0.2;
       this.otroA.setDepth(this.otroA.y);
+      // si se desliza un trecho largo (llegó tarde la posición), que camine en vez de patinar
+      const lejos = Math.hypot(this.otroObj.x - this.otroA.x, this.otroObj.y - this.otroA.y) > 6;
+      if (this.otroPose !== 'trabaja') this.otroA.ponerPose(lejos || this.otroPose === 'camina' ? 'camina' : 'quieto');
     }
+    this.moverCompaneros(dt);
     this.etiquetas.forEach((e, a) => e.setPosition(a.x, a.y - 92));
     this.sombras.forEach((sh, a) => sh.setPosition(a.x, a.y + 2).setDepth(a.y - 3));
     if (mov && time - this.pasoT > 110) { this.pasoT = time; this.polvo?.emitParticleAt(this.yoA.x, this.yoA.y + 2, 2); }
@@ -488,6 +497,7 @@ export class Coop extends Phaser.Scene {
     if (this.noche) {
       const luces: [number, number, number][] = [[this.yoA.x, this.yoA.y - 30, 230], [this.esc.mesa.x, this.esc.mesa.y, 200], [this.esc.entrega.x, this.esc.entrega.y, 190]];
       if (this.otroA) luces.push([this.otroA.x, this.otroA.y - 30, 190]);
+      this.npcs.forEach(n => luces.push([n.p.x, n.p.y - 24, 85]));
       this.estado?.items.forEach(i => { if (i.estado === 'libre') luces.push([i.x, i.y - 20, this.estado!.pedido === i.id ? 150 : 110]); });
       this.esc.decorados.forEach(d => { if (NOMBRE_EDIFICIO[d.id]) luces.push([d.x, d.y + 30, 120]); });
       this.noche.pintar(luces);
@@ -498,6 +508,73 @@ export class Coop extends Phaser.Scene {
       const s = Math.max(0, Math.floor(((this.estado.fin ? this.estado.inicio + this.estado.fin.segundos * 1000 : Date.now() + this.desfase) - this.estado.inicio) / 1000));
       this.reloj.setText(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} / ${Math.floor(this.esc.tiempo / 60)}:${String(this.esc.tiempo % 60).padStart(2, '0')}`).setColor(s > this.esc.tiempo ? '#ff8a7a' : '#ffffff');
     }
+  }
+
+  // ───────── compañeros del mapa ─────────
+  private crearCompaneros(): void {
+    const m = this.esc.mesa, e = this.esc.entrega;
+    // para sus paseos, la mesa y la plataforma de entrega también cuentan como obstáculos
+    const obst = [...this.solidos, { x: m.x, y: m.y, rx: m.r, ry: m.r * 0.5 }, { x: e.x, y: e.y, rx: e.r, ry: e.r * 0.5 }];
+    (this.esc.companeros ?? []).forEach((def, i) => {
+      if (!hojasDe(def.sprite).length) return;
+      const ruta = paseo(def, obst, this.esc.mapa.ancho, this.esc.mapa.alto);
+      const p = new Personaje(this, def.x, def.y, def.sprite, { escala: def.escala ?? 2.2, dir: 1 });
+      if (this.esc.mapa.hora === 'noche') p.list.forEach(o => ((o as Actor).base)?.setTint(0xd6dcf4));
+      this.sombras.set(p, sombra(this));
+      const nombre = this.add.text(def.x, def.y - 80, t(def.nombre), { fontFamily: FUENTE, fontSize: '11px', fontStyle: '800', color: '#ffe9b0', backgroundColor: '#1a1030cc', padding: { x: 5, y: 2 } }).setOrigin(0.5).setDepth(5900);
+      this.npcs.push({ def, p, ruta, frase: i % Math.max(1, def.frases.length), cerca: false, nombre });
+    });
+  }
+
+  /** Pasean según la hora del servidor (los dos jugadores los ven en el mismo lugar); si alguien se acerca, se detienen y lo miran. */
+  private moverCompaneros(dt: number): void {
+    const ahora = Date.now() + this.desfase;
+    this.npcs.forEach((n, i) => {
+      const yo = this.yoA, d = Math.hypot(yo.x - n.p.x, yo.y - n.p.y), cerca = d < 120 && !this.terminado;
+      if (cerca) n.p.mirarHacia(yo.x - n.p.x, yo.y - n.p.y).ponerPose('quieto');
+      else {
+        const obj = posicionEn(n.ruta, ahora, i * 7919);
+        const dx = obj.x - n.p.x, dy = obj.y - n.p.y, dist = Math.hypot(dx, dy), max = 90 * dt;
+        if (dist > 1) { const f = Math.min(1, max / dist); n.p.setPosition(n.p.x + dx * f, n.p.y + dy * f).mirarHacia(dx, dy).ponerPose('camina'); }
+        else n.p.ponerPose(obj.camina ? 'camina' : 'quieto');
+      }
+      n.p.setDepth(n.p.y);
+      n.nombre.setPosition(n.p.x, n.p.y - 78).setVisible(d < 420 && !n.burbuja);
+      if (cerca && !n.cerca) this.hablar(n);   // saluda al acercarse
+      if (!cerca && n.cerca) { n.burbuja?.destroy(); n.burbuja = undefined; }
+      n.cerca = cerca;
+      n.burbuja?.setPosition(n.p.x, n.p.y - 96);
+    });
+  }
+
+  /** USAR cerca de un compañero: dice lo siguiente. */
+  private conversar(): boolean {
+    const n = this.npcs.find(x => x.cerca);
+    if (!n) return false;
+    this.hablar(n);
+    return true;
+  }
+
+  /** Burbuja de diálogo: si el Ingeniero pidió algo, el compañero ayuda a encontrarlo; si no, una de sus frases. */
+  private hablar(n: Npc): void {
+    const e = this.estado;
+    let txt = '';
+    const pedido = e?.pedido ? e.items.find(i => i.id === e.pedido) : undefined;
+    if (this.rol === 'recolector' && pedido?.estado === 'libre' && n.frase % 2 === 0) {
+      const d = this.def(pedido.id);
+      txt = t('Lo que pide tu Ingeniero ({p}) está en: {z}.', { p: t(d.nombre), z: t(d.zona) });
+    } else if (n.def.frases.length) txt = t(n.def.frases[n.frase % n.def.frases.length]);
+    n.frase++;
+    if (!txt) return;
+    n.burbuja?.destroy();
+    const tx = this.add.text(0, 0, txt, { fontFamily: FUENTE, fontSize: '12px', fontStyle: '700', color: '#1a1030', align: 'center', wordWrap: { width: 230 }, lineSpacing: 2 }).setOrigin(0.5, 1);
+    const w = tx.width + 18, h = tx.height + 12;
+    const g = this.add.graphics().fillStyle(0xfff8e8, 0.97).fillRoundedRect(-w / 2, -h - 4, w, h, 10).lineStyle(2, 0xc8a2ff, 1).strokeRoundedRect(-w / 2, -h - 4, w, h, 10)
+      .fillStyle(0xfff8e8, 0.97).fillTriangle(-8, -5, 8, -5, 0, 6);
+    tx.setPosition(0, -10);
+    n.burbuja = this.add.container(n.p.x, n.p.y - 96, [g, tx]).setDepth(6800).setScale(0.6);
+    this.tweens.add({ targets: n.burbuja, scale: 1, duration: 180, ease: 'Back.Out' });
+    Sonido.click();
   }
 
   /** Las piezas que lleva el Recolector flotan sobre su cabeza (las ven los dos jugadores). */
@@ -536,6 +613,7 @@ export class Coop extends Phaser.Scene {
         const m = this.esc.mesa;
         if (Math.hypot(x - m.x, y - m.y) < m.r + 40) donde = m;
       }
+      if (!donde) { const n = this.npcs.find(c => c.cerca); if (n) donde = n.p; }   // conversar con un compañero
     }
     if (!donde) { this.tecla?.setVisible(false); return; }
     if (!this.tecla) {
@@ -578,6 +656,7 @@ export class Coop extends Phaser.Scene {
     this.esc.decorados.forEach(d => g.fillStyle(0x3a4d74, 1).fillRect(x0 + d.x * k - 3, y0 + d.y * k - 3, 6, 6));
     this.estado?.items.forEach(i => { if (i.estado === 'libre') g.fillStyle(this.estado!.pedido === i.id ? 0xffe14d : 0x3ff3ff, 1).fillCircle(x0 + i.x * k, y0 + i.y * k, 2.2); });
     g.fillStyle(0xffb33f, 1).fillCircle(x0 + this.esc.entrega.x * k, y0 + this.esc.entrega.y * k, 3);
+    this.npcs.forEach(n => g.fillStyle(0xc8a2ff, 0.9).fillCircle(x0 + n.p.x * k, y0 + n.p.y * k, 1.8));
     if (this.otroA) g.fillStyle(ROLES[this.rol === 'ingeniero' ? 'recolector' : 'ingeniero'].color, 1).fillCircle(x0 + this.otroA.x * k, y0 + this.otroA.y * k, 3.5);
     g.fillStyle(0xffffff, 1).fillCircle(x0 + this.yoA.x * k, y0 + this.yoA.y * k, 4);
   }

@@ -225,7 +225,7 @@ function mensaje(j, m) {
     case 'pos': {
       if (!s || s.fase === 'espera') return;
       j.pos = { x: +m.x || 0, y: +m.y || 0 };
-      return difundir(s, { t: 'pos', id: j.id, x: j.pos.x, y: j.pos.y, dir: m.dir | 0, mov: !!m.mov }, j);
+      return difundir(s, { t: 'pos', id: j.id, x: j.pos.x, y: j.pos.y, dir: m.dir | 0, mov: !!m.mov, trab: !!m.trab && j.rol === 'ingeniero' }, j);   // trab: el Ingeniero está trabajando en su mesa
     }
     case 'tomar': {
       if (!s || s.fase !== 'juego' || j.rol !== 'recolector') return;

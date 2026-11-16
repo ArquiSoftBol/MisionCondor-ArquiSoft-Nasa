@@ -13,7 +13,7 @@
     "empaquetar": "node herramientas/atlas.mjs && npm run build && node herramientas/empaquetar.mjs",
     "build:servidor": "node herramientas/atlas.mjs && npm run build && node -e \"require('fs').copyFileSync('herramientas/servir.mjs','dist/servir.mjs')\"",
     "start": "node dist/servir.mjs",
-    "test": "node --test \"tests/servidor/*.test.mjs\"",
+    "test": "node --test \"tests/servidor/*.test.mjs\" \"tests/logica/*.test.mjs\"",
     "test:e2e": "playwright test",
     "test:e2e:pc": "playwright test --project=pc",
     "test:e2e:celular": "playwright test --project=celular",

@@ -1,0 +1,284 @@
+{
+ "formato": "Ciudadela Cóndor · hojas de sprites",
+ "generado": "2026-11-16T01:42:35.894Z",
+ "direcciones": 8,
+ "cuadros": 8,
+ "nota": "Cada hoja: columnas = dirección (columna × 45°, 0 = de frente), filas = cuadro de animación. «brillo» se dibuja encima en modo aditivo (lighter) con un desenfoque suave. «ancla» es el punto del suelo bajo el sprite, en píxeles de la celda. Cada hoja tiene además un .json estilo Aseprite.",
+ "sprites": [
+  {
+   "id": "ingeniero_camina",
+   "nombre": "Ingeniero/a caminando",
+   "categoria": "coop",
+   "etiqueta": "Multijugador · Ingeniero",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/ingeniero_camina.png",
+   "brillo": "hojas/coop/ingeniero_camina_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/ingeniero_camina.json",
+   "ancla": [
+    36,
+    58
+   ],
+   "pie": [
+    6,
+    4.5
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "ingeniero_trabaja",
+   "nombre": "Ingeniero/a trabajando",
+   "categoria": "coop",
+   "etiqueta": "Multijugador · Ingeniero",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/ingeniero_trabaja.png",
+   "brillo": "hojas/coop/ingeniero_trabaja_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/ingeniero_trabaja.json",
+   "ancla": [
+    36,
+    58
+   ],
+   "pie": [
+    6,
+    4.5
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "npc_dona_rosa",
+   "nombre": "Doña Rosa",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/npc_dona_rosa.png",
+   "brillo": null,
+   "cielo": null,
+   "aseprite": "hojas/coop/npc_dona_rosa.json",
+   "ancla": [
+    36,
+    58
+   ],
+   "pie": [
+    4,
+    4
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "npc_mateo",
+   "nombre": "Mateo",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/npc_mateo.png",
+   "brillo": null,
+   "cielo": null,
+   "aseprite": "hojas/coop/npc_mateo.json",
+   "ancla": [
+    36,
+    58
+   ],
+   "pie": [
+    4,
+    4
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "npc_cholita",
+   "nombre": "Cholita paceña",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/npc_cholita.png",
+   "brillo": "hojas/coop/npc_cholita_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/npc_cholita.json",
+   "ancla": [
+    36,
+    58
+   ],
+   "pie": [
+    4,
+    4
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "npc_mallku",
+   "nombre": "Mallku",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/npc_mallku.png",
+   "brillo": "hojas/coop/npc_mallku_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/npc_mallku.json",
+   "ancla": [
+    36,
+    58
+   ],
+   "pie": [
+    4,
+    4
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "npc_llama",
+   "nombre": "Llama con aguayo",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/npc_llama.png",
+   "brillo": null,
+   "cielo": null,
+   "aseprite": "hojas/coop/npc_llama.json",
+   "ancla": [
+    36,
+    56
+   ],
+   "pie": [
+    3,
+    5
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "alien_gelatina",
+   "nombre": "Gelatina amiga",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/alien_gelatina.png",
+   "brillo": "hojas/coop/alien_gelatina_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/alien_gelatina.json",
+   "ancla": [
+    36,
+    60
+   ],
+   "pie": [
+    5,
+    5
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "alien_amigo",
+   "nombre": "Amigo de antenas",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/alien_amigo.png",
+   "brillo": "hojas/coop/alien_amigo_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/alien_amigo.json",
+   "ancla": [
+    36,
+    60
+   ],
+   "pie": [
+    4,
+    4
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "alien_medusa",
+   "nombre": "Medusa flotante",
+   "categoria": "coop",
+   "etiqueta": "Multijugador",
+   "celda": 72,
+   "ancho": 576,
+   "alto": 576,
+   "archivo": "hojas/coop/alien_medusa.png",
+   "brillo": "hojas/coop/alien_medusa_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/alien_medusa.json",
+   "ancla": [
+    36,
+    62
+   ],
+   "pie": [
+    4,
+    4
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  },
+  {
+   "id": "ovni_amigo",
+   "nombre": "Platillo de los amigos",
+   "categoria": "coop",
+   "etiqueta": "Multijugador · Decorado",
+   "celda": 128,
+   "ancho": 1024,
+   "alto": 1024,
+   "archivo": "hojas/coop/ovni_amigo.png",
+   "brillo": "hojas/coop/ovni_amigo_brillo.png",
+   "cielo": null,
+   "aseprite": "hojas/coop/ovni_amigo.json",
+   "ancla": [
+    64,
+    84
+   ],
+   "pie": [
+    13,
+    13
+   ],
+   "bucle": true,
+   "duracion": 1.047,
+   "tipo": "suelo",
+   "revision": []
+  }
+ ]
+}
